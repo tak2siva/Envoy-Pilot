@@ -1,0 +1,31 @@
+FROM golang:latest
+
+RUN go get -u github.com/lyft/protoc-gen-validate
+RUN go get -u github.com/golang/protobuf/proto
+RUN go get -u github.com/golang/protobuf/protoc-gen-go
+RUN go get -u golang.org/x/net/context
+RUN go get -u google.golang.org/grpc
+
+RUN mkdir /go/src/Envoy-xDS
+
+RUN mkdir -p /go/src/github.com/envoyproxy
+WORKDIR /go/src/github.com/envoyproxy/
+RUN git clone https://github.com/envoyproxy/go-control-plane.git
+
+RUN mkdir -p $GOPATH/src/github.com/gogo
+WORKDIR $GOPATH/src/github.com/gogo
+RUN git clone https://github.com/gogo/googleapis.git
+RUN git clone https://github.com/gogo/protobuf.git
+
+ADD cmd /go/src/Envoy-xDS/cmd
+ADD lib /go/src/Envoy-xDS/lib
+
+# TODO Compile on build
+#RUN mkdir res
+#RUN find $GOPATH/src/envoy -name '*.proto' | xargs -I % sh -c 'protoc --go_out=/res/ % --proto_path=$GOPATH/src/ \
+#       --proto_path=$GOPATH/src/github.com/lyft/protoc-gen-validate \
+#       --proto_path=/gogo-genproto/prometheus \
+#       --proto_path=/gogo-genproto/googleapis/ \
+#       --proto_path=/gogo-genproto/opencensus/proto \
+#       --proto_path=/gogo-genproto/opencensus/proto/trace'
+#

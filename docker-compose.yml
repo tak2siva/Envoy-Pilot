@@ -1,0 +1,10 @@
+version: '3'
+services:
+  xds-server:
+    build:
+      context: .
+      dockerfile: Dockerfile-xDS
+    command: ["go", "run", "/go/src/Envoy-xDS/cmd/server/main.go"]
+    ports:
+     - "8080:8080"
+     - "9901:9901"
