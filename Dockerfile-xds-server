@@ -1,0 +1,6 @@
+FROM tak2siva/xds-build:latest
+
+ADD cmd /go/src/Envoy-xDS/cmd
+ADD lib /go/src/Envoy-xDS/lib
+
+RUN go build -o /go/src/Envoy-xDS/cmd/server/main /go/src/Envoy-xDS/cmd/server/main.go
