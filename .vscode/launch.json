@@ -9,10 +9,10 @@
             "type": "go",
             "request": "launch",
             "mode": "remote",
-            "remotePath": "${workspaceRoot}",
+            "remotePath": "/go/src/Envoy-xDS/cmd/server/",
             "port": 2345,
             "host": "127.0.0.1",
-            "program": "${workspaceRoot}",
+            "program": "${workspaceRoot}/cmd/server/",
             "env": {},
             "args": []
         },
