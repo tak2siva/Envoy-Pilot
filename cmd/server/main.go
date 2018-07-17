@@ -10,6 +10,8 @@ import (
 	"log"
 	"net"
 
+	consul "github.com/hashicorp/consul/api"
+
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 
 	"github.com/google/uuid"
@@ -73,6 +75,16 @@ func (s *server) StreamClusters(stream v2.ClusterDiscoveryService_StreamClusters
 
 func (s *server) IncrementalClusters(_ v2.ClusterDiscoveryService_IncrementalClustersServer) error {
 	return errors.New("not implemented")
+}
+
+var consulHandle *consul.KV
+
+func init() {
+	consulClient, err := consul.NewClient(&consul.Config{Address: "host.docker.internal:8500"})
+	if err != nil {
+		panic(err)
+	}
+	consulHandle = consulClient.KV()
 }
 
 func main() {
