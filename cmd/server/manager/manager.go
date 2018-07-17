@@ -1,8 +1,6 @@
 package manager
 
 import (
-	"fmt"
-
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 )
 
@@ -25,13 +23,13 @@ func IsOutDated(req *v2.DiscoveryRequest) bool {
 	return true
 }
 
-func UpdateMap(nonceChannel chan *v2.DiscoveryResponse) {
-	for {
-		record, isOpen := <-nonceChannel
-		if isOpen {
-			nonceMap[record.Nonce] = record
-		} else {
-			fmt.Println("Closing nonce map channel")
-		}
-	}
+func UpdateMap(resp *v2.DiscoveryResponse) {
+	// for {
+	// record, isOpen := <-nonceChannel
+	// if isOpen {
+	nonceMap[resp.Nonce] = resp
+	// } else {
+	// fmt.Println("Closing nonce map channel")
+	// }
+	// }
 }

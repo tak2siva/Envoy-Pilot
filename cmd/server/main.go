@@ -2,7 +2,6 @@ package main
 
 import (
 	"Envoy-xDS/cmd/server/manager"
-	"Envoy-xDS/cmd/server/util"
 	xdscluster "Envoy-xDS/cmd/server/xdscluster"
 	"Envoy-xDS/lib"
 	"context"
@@ -32,28 +31,20 @@ func (s *server) FetchClusters(ctx context.Context, in *v2.DiscoveryRequest) (*v
 }
 
 func (s *server) StreamClusters(stream v2.ClusterDiscoveryService_StreamClustersServer) error {
-	fmt.Printf("--------------------------------\n")
-	ctx := stream.Context()
-
-	nonceChannel := make(chan *v2.DiscoveryResponse)
-	go manager.UpdateMap(nonceChannel)
+	fmt.Printf("-------------- Starting a stream ------------------\n")
 
 	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
-
 		req, err := stream.Recv()
+		// util.Check(err)
+
+		if err != nil {
+			fmt.Println("Disconnecting client")
+			fmt.Println(err)
+			return err
+		}
 
 		if manager.IsACK(req) || !manager.IsOutDated(req) {
 			fmt.Println("No updates ignoring request....")
-			continue
-		}
-
-		if err != nil {
-			log.Printf("receive error %v", err)
 			continue
 		}
 
@@ -66,13 +57,17 @@ func (s *server) StreamClusters(stream v2.ClusterDiscoveryService_StreamClusters
 			TypeUrl:     req.TypeUrl,
 			Nonce:       responseUUID,
 		}
-		nonceChannel <- response
-
 		fmt.Printf("%+v\n", req)
 		fmt.Printf("%+v\n", response)
 
 		err = stream.Send(response)
-		util.Check(err)
+		if err != nil {
+			fmt.Println("error sending to client")
+			fmt.Println(err)
+			return err
+		}
+		manager.UpdateMap(response)
+		fmt.Println("Out req channel..")
 	}
 }
 

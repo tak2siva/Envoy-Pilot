@@ -1,0 +1,3 @@
+ docker run --rm -it -v "$(pwd)"/test/envoy/config.yaml:/app/config.yaml envoyproxy/envoy:latest /bin/bash
+
+ envoy -c /app/config.yaml -l debug --v2-config-only --service-cluster app-cluster --service-node app-node
