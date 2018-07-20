@@ -1,17 +1,27 @@
 package storage
 
 import (
-	consul "github.com/hashicorp/consul/api"
+	"Envoy-xDS/cmd/server/model"
 )
 
+var once *XdsConfigDao
+
 type XdsConfigDao struct {
-	consulHandle *consul.KV
+	consulWrapper ConsulWrapper
 }
 
-func (dao *XdsConfigDao) GetLatestVersion() string {
-	pair, _, err := dao.consulHandle.Get("foo", nil)
-	if err != nil {
-		panic(err)
+func (dao *XdsConfigDao) GetLatestVersion(model.EnvoySubscriber) string {
+	// dao.consulWrapper.Get()
+	return ""
+}
+
+func (dao *XdsConfigDao) RegisterSubscriber(clusterName string, nodeName string) {
+	// dao.consulHandle.Put()
+}
+
+func GetXdsConfigDao() *XdsConfigDao {
+	if once == nil {
+		once = &XdsConfigDao{consulWrapper: GetConsulWrapper()}
 	}
-	return string(pair.Value)
+	return once
 }
