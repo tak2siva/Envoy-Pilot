@@ -15,8 +15,10 @@ func (dao *XdsConfigDao) GetLatestVersion(model.EnvoySubscriber) string {
 	return ""
 }
 
-func (dao *XdsConfigDao) RegisterSubscriber(clusterName string, nodeName string) {
-	// dao.consulHandle.Put()
+func (dao *XdsConfigDao) RegisterSubscriber(sub *model.EnvoySubscriber) {
+	id := dao.consulWrapper.GetUniqId()
+	sub.Id = id
+	dao.consulWrapper.Set(sub.BuildInstanceKey()+"/meta", sub.ToJSON())
 }
 
 func GetXdsConfigDao() *XdsConfigDao {

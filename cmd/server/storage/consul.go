@@ -38,19 +38,19 @@ func (c *ConsulWrapper) GetUniqId() int {
 	}
 	if pair == nil {
 		fmt.Println("nil value...")
-		return 0
+		c.Set(envoySubscriberSequenceKey, "1")
+		pair = c.Get(envoySubscriberSequenceKey)
 	}
-	fmt.Println(pair.Value)
-	// consulHandle.CAS()
+	log.Printf("Current sequence val %d\n", pair.Value)
 	id, err := strconv.Atoi(string(pair.Value))
 	if err != nil {
-		fmt.Println("Err getting uniq id")
+		log.Printf("Err getting uniq id: %s\n", pair.Value)
 		panic(err)
 	}
 
 	log.Printf("Last id value is %d\n", id)
 	newId := id + 1
-	pair.Value = []byte(string(newId))
+	pair.Value = []byte(strconv.Itoa(newId))
 	res, _, err := c.client.KV().CAS(pair, nil)
 
 	if !res {
@@ -93,4 +93,12 @@ func (c *ConsulWrapper) GetInt(key string) int {
 		panic(err)
 	}
 	return id
+}
+
+func (c *ConsulWrapper) Delete(key string) {
+	_, err := c.client.KV().Delete(key, nil)
+	if err != nil {
+		log.Printf("Error deleting key %s\n", key)
+		panic(err)
+	}
 }

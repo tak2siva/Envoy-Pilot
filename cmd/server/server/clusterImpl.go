@@ -21,7 +21,6 @@ func (s *Server) StreamClusters(stream v2.ClusterDiscoveryService_StreamClusters
 	fmt.Printf("-------------- Starting a stream ------------------\n")
 
 	serverCtx, cancel := context.WithCancel(context.Background())
-	serverCtx = context.WithValue(serverCtx, envoySubscriberKey, &model.EnvoySubscriber{})
 
 	dispatchChannel := make(chan bool)
 	i := 0
@@ -43,11 +42,13 @@ func (s *Server) StreamClusters(stream v2.ClusterDiscoveryService_StreamClusters
 		}
 
 		if i == 0 {
+			subscriber := &model.EnvoySubscriber{Cluster: req.Node.Cluster, Node: req.Node.Id}
+			serverCtx = context.WithValue(serverCtx, envoySubscriberKey, subscriber)
+			dao := storage.GetXdsConfigDao()
+			dao.RegisterSubscriber(subscriber)
+
 			go consulPoll(serverCtx, dispatchChannel)
 			go dispatchCluster(stream, dispatchChannel, serverCtx)
-			dao := storage.GetXdsConfigDao()
-			dao.RegisterSubscriber(req.Node.Cluster, req.Node.Id)
-			// dao.Register
 			i++
 		}
 
