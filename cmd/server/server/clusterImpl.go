@@ -2,21 +2,30 @@ package server
 
 import (
 	"Envoy-xDS/cmd/server/manager"
-	"Envoy-xDS/cmd/server/xdscluster"
+	"Envoy-xDS/cmd/server/mapper"
+	"Envoy-xDS/cmd/server/model"
+	"Envoy-xDS/cmd/server/storage"
 	"context"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-
+	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/google/uuid"
 )
 
+const envoySubscriberKey = "envoySubscriber"
+
 func (s *Server) StreamClusters(stream v2.ClusterDiscoveryService_StreamClustersServer) error {
 	fmt.Printf("-------------- Starting a stream ------------------\n")
+
 	serverCtx, cancel := context.WithCancel(context.Background())
-	i := false
+	serverCtx = context.WithValue(serverCtx, envoySubscriberKey, &model.EnvoySubscriber{})
+
+	dispatchChannel := make(chan bool)
+	i := 0
+
 	for {
 		req, err := stream.Recv()
 		// util.Check(err)
@@ -28,37 +37,52 @@ func (s *Server) StreamClusters(stream v2.ClusterDiscoveryService_StreamClusters
 			return err
 		}
 
-		if manager.IsACK(req) || !manager.IsOutDated(req) {
+		if manager.IsACK(req) || !manager.IsOutDated(req.VersionInfo) {
 			fmt.Println("No updates ignoring request....")
 			continue
 		}
 
+		if i == 0 {
+			go consulPoll(serverCtx, dispatchChannel)
+			go dispatchCluster(stream, dispatchChannel, serverCtx)
+			dao := storage.GetXdsConfigDao()
+			dao.RegisterSubscriber(req.Node.Cluster, req.Node.Id)
+			// dao.Register
+			i++
+		}
+
+		fmt.Println("Out req channel..")
+	}
+}
+
+func dispatchCluster(stream v2.ClusterDiscoveryService_StreamClustersServer,
+	dispatchChannel chan bool,
+	ctx context.Context) {
+	for range dispatchChannel {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
 		responseUUID := uuid.New().String()
 		responseVersion := "1"
 
+		m := mapper.ClusterMapper{}
+
 		response := &v2.DiscoveryResponse{
 			VersionInfo: responseVersion,
-			Resources:   xdscluster.GetResources(req.TypeUrl),
-			TypeUrl:     req.TypeUrl,
+			Resources:   m.GetResources(cache.ClusterType),
+			TypeUrl:     cache.ClusterType,
 			Nonce:       responseUUID,
 		}
-		fmt.Printf("%+v\n", req)
 		fmt.Printf("%+v\n", response)
 
-		err = stream.Send(response)
+		err := stream.Send(response)
 		if err != nil {
 			fmt.Println("error sending to client")
 			fmt.Println(err)
-			cancel()
-			return err
 		}
 		manager.UpdateMap(response)
-
-		if i == false {
-			go consulPoll(serverCtx)
-			i = true
-		}
-		fmt.Println("Out req channel..")
 	}
 }
 
@@ -71,7 +95,7 @@ func (s *Server) IncrementalClusters(_ v2.ClusterDiscoveryService_IncrementalClu
 	return errors.New("not implemented")
 }
 
-func consulPoll(ctx context.Context) {
+func consulPoll(ctx context.Context, dispatchChannel chan bool) {
 	for {
 		time.Sleep(10 * time.Second)
 		select {
@@ -80,5 +104,11 @@ func consulPoll(ctx context.Context) {
 		default:
 		}
 		fmt.Println("Checking consul..")
+		dao := storage.GetXdsConfigDao()
+		latestVersion := dao.GetLatestVersion()
+		lastUpdatedVersion := ctx.Value(envoySubscriberKey).(string)
+		if latestVersion != lastUpdatedVersion {
+			dispatchChannel <- true
+		}
 	}
 }

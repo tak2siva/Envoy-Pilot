@@ -5,8 +5,9 @@ import (
 )
 
 var (
-	nonceMap   = make(map[string]*v2.DiscoveryResponse)
-	versionMap = make(map[string]bool)
+	nonceMap           = make(map[string]*v2.DiscoveryResponse)
+	versionMap         = make(map[string]bool)
+	lastUpdatedVersion string
 )
 
 func IsACK(req *v2.DiscoveryRequest) bool {
@@ -16,20 +17,14 @@ func IsACK(req *v2.DiscoveryRequest) bool {
 	return false
 }
 
-func IsOutDated(req *v2.DiscoveryRequest) bool {
-	if _, ok := versionMap[req.VersionInfo]; ok {
+func IsOutDated(versionInfo string) bool {
+	if _, ok := versionMap[versionInfo]; ok {
 		return false
 	}
 	return true
 }
 
 func UpdateMap(resp *v2.DiscoveryResponse) {
-	// for {
-	// record, isOpen := <-nonceChannel
-	// if isOpen {
 	nonceMap[resp.Nonce] = resp
-	// } else {
-	// fmt.Println("Closing nonce map channel")
-	// }
-	// }
+	lastUpdatedVersion = resp.VersionInfo
 }
