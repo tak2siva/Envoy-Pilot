@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"fmt"
+	"log"
 	"testing"
 
 	consul "github.com/hashicorp/consul/api"
@@ -21,7 +21,7 @@ func init() {
 func TestGetUniqId(t *testing.T) {
 	wrapper.Set("envoySubscriberSequence", "21")
 	genID := wrapper.GetUniqId()
-	fmt.Printf("-----%s----\n", wrapper.GetString("envoySubscriberSequence"))
+	log.Printf("-----%s----\n", wrapper.GetString("envoySubscriberSequence"))
 	dbID := wrapper.GetInt("envoySubscriberSequence")
 	if genID != 22 || genID != dbID {
 		t.Errorf("Error generating uniq Id..\n genId: %d - dbId:%d", genID, dbID)

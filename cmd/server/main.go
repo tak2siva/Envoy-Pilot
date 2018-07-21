@@ -22,6 +22,7 @@ func init() {
 		panic(err)
 	}
 	consulHandle = consulClient.KV()
+	log.SetFlags(log.Llongfile)
 }
 
 func main() {

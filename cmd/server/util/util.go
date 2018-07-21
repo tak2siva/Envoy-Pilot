@@ -1,10 +1,10 @@
 package util
 
-import "fmt"
+import "log"
 
 func Check(err error) {
 	if err != nil {
-		fmt.Println("[Util] Error..", err)
+		log.Println("[Util] Error..", err)
 		// panic(err)
 	}
 }

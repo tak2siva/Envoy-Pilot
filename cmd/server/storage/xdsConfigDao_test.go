@@ -3,7 +3,7 @@ package storage
 import (
 	"Envoy-xDS/cmd/server/model"
 	"encoding/json"
-	"fmt"
+	"log"
 	"testing"
 	"time"
 
@@ -32,7 +32,7 @@ func TestXdsConfigDao_RegisterSubscriber(t *testing.T) {
 		LastUpdatedTimestamp: time.Now(),
 	}
 
-	fmt.Println(subscriber.ToJSON())
+	log.Println(subscriber.ToJSON())
 	dao.RegisterSubscriber(&subscriber)
 	jsonString := wrapper.GetString(subscriber.BuildInstanceKey() + "/meta")
 
@@ -45,8 +45,43 @@ func TestXdsConfigDao_RegisterSubscriber(t *testing.T) {
 	isEqual := subscriber2.IsEqual(&subscriber)
 
 	if !isEqual {
-		fmt.Printf("--------%+v\n", subscriber)
-		fmt.Printf("--------%+v\n", subscriber2)
+		log.Printf("--------%+v\n", subscriber)
+		log.Printf("--------%+v\n", subscriber2)
 		t.Errorf("Marshal & Unmarshal arent rqual")
+	}
+}
+
+func TestXdsConfigDao_GetLatestVersion(t *testing.T) {
+	subscriber := model.EnvoySubscriber{
+		Id:                   0,
+		Cluster:              "vs-cluster",
+		Node:                 "vs-node",
+		UpdateSuccess:        1,
+		UpdateFailures:       0,
+		LastUpdatedVersion:   "1.0",
+		LastUpdatedTimestamp: time.Now(),
+	}
+
+	key := subscriber.BuildRootKey() + "version"
+	wrapper.Set(key, "5.2")
+	if "5.2" != dao.GetLatestVersion(&subscriber) {
+		t.Errorf("Error fetching version..\n")
+	}
+}
+
+func TestXdsConfigDao_GetClusterACK(t *testing.T) {
+	subscriber := model.EnvoySubscriber{
+		Id:                   0,
+		Cluster:              "vs-cluster",
+		Node:                 "vs-node",
+		UpdateSuccess:        1,
+		UpdateFailures:       0,
+		LastUpdatedVersion:   "1.0",
+		LastUpdatedTimestamp: time.Now(),
+	}
+	nonce := "xvas-1231-sfg13-112312"
+	dao.SetClusterACK(&subscriber, nonce)
+	if !dao.IsACKPresent(&subscriber, nonce) {
+		t.Errorf("Nonce is not set properly..\n")
 	}
 }

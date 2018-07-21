@@ -4,10 +4,11 @@ import (
 	"Envoy-xDS/cmd/server/manager"
 	"Envoy-xDS/cmd/server/mapper"
 	"Envoy-xDS/cmd/server/model"
+	"Envoy-xDS/cmd/server/service"
 	"Envoy-xDS/cmd/server/storage"
 	"context"
 	"errors"
-	"fmt"
+	"log"
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -17,32 +18,26 @@ import (
 
 const envoySubscriberKey = "envoySubscriber"
 
+var clusterService *service.ClusterService
+var xdsConfigDao *storage.XdsConfigDao
+
+func init() {
+	clusterService = service.GetClusterService()
+	xdsConfigDao = storage.GetXdsConfigDao()
+}
+
 func (s *Server) StreamClusters(stream v2.ClusterDiscoveryService_StreamClustersServer) error {
-	fmt.Printf("-------------- Starting a stream ------------------\n")
+	log.Printf("-------------- Starting a stream ------------------\n")
 
 	serverCtx, cancel := context.WithCancel(context.Background())
-
 	dispatchChannel := make(chan bool)
 	i := 0
+	var subscriber *model.EnvoySubscriber
 
 	for {
 		req, err := stream.Recv()
-		// util.Check(err)
-
-		if err != nil {
-			fmt.Println("Disconnecting client")
-			fmt.Println(err)
-			cancel()
-			return err
-		}
-
-		if manager.IsACK(req) || !manager.IsOutDated(req.VersionInfo) {
-			fmt.Println("No updates ignoring request....")
-			continue
-		}
-
 		if i == 0 {
-			subscriber := &model.EnvoySubscriber{Cluster: req.Node.Cluster, Node: req.Node.Id}
+			subscriber = &model.EnvoySubscriber{Cluster: req.Node.Cluster, Node: req.Node.Id}
 			serverCtx = context.WithValue(serverCtx, envoySubscriberKey, subscriber)
 			dao := storage.GetXdsConfigDao()
 			dao.RegisterSubscriber(subscriber)
@@ -52,7 +47,19 @@ func (s *Server) StreamClusters(stream v2.ClusterDiscoveryService_StreamClusters
 			i++
 		}
 
-		fmt.Println("Out req channel..")
+		if err != nil {
+			log.Printf("Disconnecting client %s\n", subscriber.BuildInstanceKey())
+			log.Println(err)
+			cancel()
+			return err
+		}
+
+		if xdsConfigDao.IsACKPresent(subscriber, req.ResponseNonce) {
+			log.Printf("Received ACK %s from %s", req.ResponseNonce, subscriber.BuildInstanceKey())
+			continue
+		}
+
+		log.Println("Out req channel..")
 	}
 }
 
@@ -76,19 +83,19 @@ func dispatchCluster(stream v2.ClusterDiscoveryService_StreamClustersServer,
 			TypeUrl:     cache.ClusterType,
 			Nonce:       responseUUID,
 		}
-		fmt.Printf("%+v\n", response)
+		log.Printf("%+v\n", response)
 
 		err := stream.Send(response)
 		if err != nil {
-			fmt.Println("error sending to client")
-			fmt.Println(err)
+			log.Println("error sending to client")
+			log.Println(err)
 		}
 		manager.UpdateMap(response)
 	}
 }
 
 func (s *Server) FetchClusters(ctx context.Context, in *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	fmt.Printf("%+v\n", in)
+	log.Printf("%+v\n", in)
 	return &v2.DiscoveryResponse{VersionInfo: "2"}, nil
 }
 
@@ -104,11 +111,13 @@ func consulPoll(ctx context.Context, dispatchChannel chan bool) {
 			return
 		default:
 		}
-		fmt.Println("Checking consul..")
-		dao := storage.GetXdsConfigDao()
-		latestVersion := dao.GetLatestVersion()
-		lastUpdatedVersion := ctx.Value(envoySubscriberKey).(string)
-		if latestVersion != lastUpdatedVersion {
+		subscriber := ctx.Value(envoySubscriberKey).(*model.EnvoySubscriber)
+		log.Printf("Checking consul for %d..\n", subscriber.Id)
+		if !xdsConfigDao.IsRepoPresent(subscriber) {
+			continue
+		}
+		if clusterService.IsOutdated(subscriber) {
+			log.Println("Found update dispatching for %s", subscriber.BuildInstanceKey())
 			dispatchChannel <- true
 		}
 	}

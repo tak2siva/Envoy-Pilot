@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"fmt"
 	"log"
 	"strconv"
 
@@ -37,7 +36,7 @@ func (c *ConsulWrapper) GetUniqId() int {
 		panic(err)
 	}
 	if pair == nil {
-		fmt.Println("nil value...")
+		log.Println("nil value...")
 		c.Set(envoySubscriberSequenceKey, "1")
 		pair = c.Get(envoySubscriberSequenceKey)
 	}
@@ -68,6 +67,7 @@ func (c *ConsulWrapper) Set(key string, value string) {
 	p := &consul.KVPair{Key: key, Value: []byte(value)}
 	_, err := c.client.KV().Put(p, nil)
 	if err != nil {
+		log.Println(err)
 		panic(err)
 	}
 }
@@ -76,6 +76,9 @@ func (c *ConsulWrapper) Get(key string) *consul.KVPair {
 	pair, _, err := c.client.KV().Get(key, nil)
 	if err != nil {
 		panic(err)
+	}
+	if pair == nil {
+		log.Printf("Nil value for key %s\n", key)
 	}
 	return pair
 }
@@ -89,7 +92,7 @@ func (c *ConsulWrapper) GetInt(key string) int {
 	pair := c.Get(key)
 	id, err := strconv.Atoi(string(pair.Value))
 	if err != nil {
-		fmt.Println("Err getting uniq id")
+		log.Println("Err getting uniq id")
 		panic(err)
 	}
 	return id

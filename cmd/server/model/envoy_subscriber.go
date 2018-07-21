@@ -30,6 +30,10 @@ func (e *EnvoySubscriber) BuildInstanceKey() string {
 	return fmt.Sprintf("cluster/%s/node/%s/%d", e.Cluster, e.Node, e.Id)
 }
 
+func (e *EnvoySubscriber) BuildRootKey() string {
+	return fmt.Sprintf("cluster/%s/node/%s/", e.Cluster, e.Node)
+}
+
 func (e *EnvoySubscriber) IsEqual(that *EnvoySubscriber) bool {
 	return e.Cluster == that.Cluster && e.Node == that.Node && e.UpdateSuccess == that.UpdateSuccess && e.UpdateFailures == that.UpdateFailures && e.LastUpdatedVersion == that.LastUpdatedVersion
 }
