@@ -1,7 +1,6 @@
 package server
 
 import (
-	"Envoy-xDS/cmd/server/manager"
 	"Envoy-xDS/cmd/server/mapper"
 	"Envoy-xDS/cmd/server/model"
 	"Envoy-xDS/cmd/server/service"
@@ -26,6 +25,7 @@ func init() {
 	xdsConfigDao = storage.GetXdsConfigDao()
 }
 
+// StreamClusters bi directional stream to update cluster config
 func (s *Server) StreamClusters(stream v2.ClusterDiscoveryService_StreamClustersServer) error {
 	log.Printf("-------------- Starting a stream ------------------\n")
 
@@ -43,9 +43,11 @@ func (s *Server) StreamClusters(stream v2.ClusterDiscoveryService_StreamClusters
 			dao.RegisterSubscriber(subscriber)
 
 			go consulPoll(serverCtx, dispatchChannel)
-			go dispatchCluster(stream, dispatchChannel, serverCtx)
+			go dispatchCluster(serverCtx, stream, dispatchChannel)
 			i++
 		}
+
+		log.Printf("Received Request from %s\n %+v\n", subscriber.BuildInstanceKey(), req)
 
 		if err != nil {
 			log.Printf("Disconnecting client %s\n", subscriber.BuildInstanceKey())
@@ -54,43 +56,58 @@ func (s *Server) StreamClusters(stream v2.ClusterDiscoveryService_StreamClusters
 			return err
 		}
 
-		if xdsConfigDao.IsACKPresent(subscriber, req.ResponseNonce) {
+		if xdsConfigDao.IsACK(subscriber, req.ResponseNonce) {
 			log.Printf("Received ACK %s from %s", req.ResponseNonce, subscriber.BuildInstanceKey())
+			xdsConfigDao.RemoveNonce(subscriber, req.ResponseNonce)
+			subscriber.LastUpdatedVersion = req.VersionInfo
+			xdsConfigDao.UpdateEnvoySubscriber(subscriber)
 			continue
+		} else {
+			log.Printf("Response nonce not recognized %s", req.ResponseNonce)
 		}
-
-		log.Println("Out req channel..")
 	}
 }
 
-func dispatchCluster(stream v2.ClusterDiscoveryService_StreamClustersServer,
-	dispatchChannel chan bool,
-	ctx context.Context) {
+func dispatchCluster(ctx context.Context, stream v2.ClusterDiscoveryService_StreamClustersServer,
+	dispatchChannel chan bool) {
 	for range dispatchChannel {
 		select {
 		case <-ctx.Done():
 			return
 		default:
 		}
+
+		subscriber := ctx.Value(envoySubscriberKey).(*model.EnvoySubscriber)
+		mapper := mapper.ClusterMapper{}
+		configJson, version := xdsConfigDao.GetClusterConfigJson(subscriber)
+		clusterObj, err := mapper.GetResources(configJson)
+
+		if err != nil {
+			log.Println(err)
+			log.Printf("Unable to dispatch config for %s\n", subscriber.BuildInstanceKey())
+			continue
+		}
+
 		responseUUID := uuid.New().String()
-		responseVersion := "1"
-
-		m := mapper.ClusterMapper{}
-
 		response := &v2.DiscoveryResponse{
-			VersionInfo: responseVersion,
-			Resources:   m.GetResources(cache.ClusterType),
+			VersionInfo: version,
+			Resources:   clusterObj,
 			TypeUrl:     cache.ClusterType,
 			Nonce:       responseUUID,
 		}
-		log.Printf("%+v\n", response)
 
-		err := stream.Send(response)
+		log.Printf("%+v\n", response)
+		log.Printf("Sending config to %s \n %+v \n", subscriber.BuildInstanceKey(), response)
+
+		xdsConfigDao.SaveNonceForStreamClusters(subscriber, responseUUID)
+		err = stream.Send(response)
 		if err != nil {
 			log.Println("error sending to client")
 			log.Println(err)
+			xdsConfigDao.RemoveNonce(subscriber, responseUUID)
+		} else {
+			log.Printf("Successfully Sent config to %s \n", subscriber.BuildInstanceKey())
 		}
-		manager.UpdateMap(response)
 	}
 }
 
@@ -112,12 +129,12 @@ func consulPoll(ctx context.Context, dispatchChannel chan bool) {
 		default:
 		}
 		subscriber := ctx.Value(envoySubscriberKey).(*model.EnvoySubscriber)
-		log.Printf("Checking consul for %d..\n", subscriber.Id)
+		log.Printf("Checking consul for %s..\n", subscriber.BuildInstanceKey())
 		if !xdsConfigDao.IsRepoPresent(subscriber) {
 			continue
 		}
 		if clusterService.IsOutdated(subscriber) {
-			log.Println("Found update dispatching for %s", subscriber.BuildInstanceKey())
+			log.Printf("Found update dispatching for %s\n", subscriber.BuildInstanceKey())
 			dispatchChannel <- true
 		}
 	}

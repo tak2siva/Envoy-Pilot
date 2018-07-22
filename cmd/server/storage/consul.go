@@ -40,14 +40,13 @@ func (c *ConsulWrapper) GetUniqId() int {
 		c.Set(envoySubscriberSequenceKey, "1")
 		pair = c.Get(envoySubscriberSequenceKey)
 	}
-	log.Printf("Current sequence val %d\n", pair.Value)
 	id, err := strconv.Atoi(string(pair.Value))
 	if err != nil {
 		log.Printf("Err getting uniq id: %s\n", pair.Value)
 		panic(err)
 	}
 
-	log.Printf("Last id value is %d\n", id)
+	// log.Printf("Last id value is %d\n", id)
 	newId := id + 1
 	pair.Value = []byte(strconv.Itoa(newId))
 	res, _, err := c.client.KV().CAS(pair, nil)
@@ -59,7 +58,7 @@ func (c *ConsulWrapper) GetUniqId() int {
 		log.Println("Error updating uniq CAS")
 		panic(err)
 	}
-	log.Printf("New uniq id is %d\n", newId)
+	// log.Printf("New uniq id is %d\n", newId)
 	return newId
 }
 
@@ -98,10 +97,11 @@ func (c *ConsulWrapper) GetInt(key string) int {
 	return id
 }
 
-func (c *ConsulWrapper) Delete(key string) {
+func (c *ConsulWrapper) Delete(key string) error {
 	_, err := c.client.KV().Delete(key, nil)
 	if err != nil {
 		log.Printf("Error deleting key %s\n", key)
-		panic(err)
+		return err
 	}
+	return nil
 }

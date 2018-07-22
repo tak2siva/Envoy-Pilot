@@ -19,14 +19,11 @@ func (dao *XdsConfigDao) SetClusterACK(sub *model.EnvoySubscriber, ack string) {
 	dao.consulWrapper.Set(sub.BuildInstanceKey()+"/clusterACK/"+ack, "true")
 }
 
-func (dao *XdsConfigDao) IsACKPresent(sub *model.EnvoySubscriber, ack string) bool {
-	return dao.consulWrapper.Get(sub.BuildInstanceKey()+"/clusterACK/"+ack) != nil
-}
-
 func (dao *XdsConfigDao) RegisterSubscriber(sub *model.EnvoySubscriber) {
 	id := dao.consulWrapper.GetUniqId()
 	sub.Id = id
-	dao.consulWrapper.Set(sub.BuildInstanceKey()+"/meta", sub.ToJSON())
+	dao.consulWrapper.Set(metaKey(sub), sub.ToJSON())
+	log.Printf("Registered new subscriber %s", sub.BuildInstanceKey())
 }
 
 func (dao *XdsConfigDao) IsRepoPresent(sub *model.EnvoySubscriber) bool {
@@ -35,6 +32,39 @@ func (dao *XdsConfigDao) IsRepoPresent(sub *model.EnvoySubscriber) bool {
 		return false
 	}
 	return true
+}
+
+func (dao *XdsConfigDao) GetClusterConfigJson(sub *model.EnvoySubscriber) (string, string) {
+	return dao.consulWrapper.GetString(sub.BuildRootKey() + "config"), dao.GetLatestVersion(sub)
+}
+
+func (dao *XdsConfigDao) SaveNonceForStreamClusters(sub *model.EnvoySubscriber, nonce string) {
+	dao.consulWrapper.Set(nonceKey(sub, nonce), "true")
+	log.Printf("Writing ACK %s\n", nonceKey(sub, nonce))
+}
+
+func (dao *XdsConfigDao) IsACK(sub *model.EnvoySubscriber, ack string) bool {
+	return dao.consulWrapper.Get(nonceKey(sub, ack)) != nil
+}
+
+func (dao *XdsConfigDao) RemoveNonce(sub *model.EnvoySubscriber, nonce string) {
+	err := dao.consulWrapper.Delete(nonceKey(sub, nonce))
+	if err != nil {
+		log.Printf("Error deleting nonce %s\n", nonceKey(sub, nonce))
+	}
+}
+
+func (dao *XdsConfigDao) UpdateEnvoySubscriber(sub *model.EnvoySubscriber) {
+	log.Printf("Updating envoy subscriber %+v\n", sub)
+	dao.consulWrapper.Set(metaKey(sub), sub.ToJSON())
+}
+
+func nonceKey(sub *model.EnvoySubscriber, nonce string) string {
+	return sub.BuildInstanceKey() + "/Nonce/StreamClusters/" + nonce
+}
+
+func metaKey(sub *model.EnvoySubscriber) string {
+	return sub.BuildInstanceKey() + "/meta"
 }
 
 func GetXdsConfigDao() *XdsConfigDao {

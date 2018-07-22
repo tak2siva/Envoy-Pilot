@@ -2,15 +2,18 @@ package mapper
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
+	"runtime/debug"
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/pkg/cache"
 
 	envoy_api_v2_core1 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	"github.com/golang/protobuf/jsonpb"
 )
 
 type ClusterMapper struct{}
@@ -54,7 +57,16 @@ func buildHosts(rawObj map[string]interface{}) ([]*envoy_api_v2_core1.Address, e
 	return list, nil
 }
 
-func (c *ClusterMapper) GetCluster(clusterJson string) (*v2.Cluster, error) {
+func (c *ClusterMapper) GetCluster(clusterJson string) (retCluster *v2.Cluster, retErr error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("*********************************")
+			log.Printf("Recovered %s from %s: %s\n", "GetClusters", r, debug.Stack())
+			log.Println("*********************************")
+			retErr = errors.New(fmt.Sprintf("%s", r))
+		}
+	}()
+
 	var rawObj = make(map[string]interface{})
 	var clusterObj = &v2.Cluster{}
 
@@ -78,45 +90,41 @@ func (c *ClusterMapper) GetCluster(clusterJson string) (*v2.Cluster, error) {
 	return clusterObj, nil
 }
 
-func (c *ClusterMapper) GetResources(typeUrl string) []types.Any {
+func (c *ClusterMapper) GetResources(configJson string) ([]types.Any, error) {
+	typeUrl := cache.ClusterType
 	resources := make([]types.Any, 1)
-	json := `
-		{
-			"name": "bifrost",
-			"connect_timeout": "250",
-			"type": 1,
-			"lb_policy": 0,
-			"hosts": [{
-				"socket_address": {
-					"address": "127.0.0.1",
-					"portValue": 1234
-				}
-			}]
-		}
-	`
+	// json := `
+	// 	{
+	// 		"name": "bifrost",
+	// 		"connect_timeout": "250",
+	// 		"type": 1,
+	// 		"lb_policy": 0,
+	// 		"hosts": [{
+	// 			"socket_address": {
+	// 				"address": "127.0.0.1",
+	// 				"portValue": 1234
+	// 			}
+	// 		}]
+	// 	}
+	// `
 
-	obj := v2.Cluster{}
-	m := &jsonpb.Marshaler{}
-	if err := jsonpb.UnmarshalString(json, &obj); err != nil {
-		// if err := types.UnmarshalAny(json, obj); err != nil {
-		log.Printf("error: %s", err.Error())
-	}
-
-	protoVal, _ := c.GetCluster("")
-	_, err := m.MarshalToString(protoVal)
+	protoVal, err := c.GetCluster(configJson)
 	if err != nil {
-		log.Printf("\n marshal error: %s", err.Error())
+		log.Printf("Error parsing cluster config")
+		return nil, err
 	}
-
 	data, err := proto.Marshal(protoVal)
-	check(err)
+	if err != nil {
+		log.Printf("Error building cluster resource...\n")
+		return nil, err
+	}
 
 	resources[0] = types.Any{
 		Value:   data,
 		TypeUrl: typeUrl,
 	}
 
-	return resources
+	return resources, err
 }
 
 func check(err error) {
