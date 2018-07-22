@@ -80,8 +80,8 @@ func TestXdsConfigDao_GetClusterACK(t *testing.T) {
 		LastUpdatedTimestamp: time.Now(),
 	}
 	nonce := "xvas-1231-sfg13-112312"
-	dao.SetClusterACK(&subscriber, nonce)
-	if !dao.IsACKPresent(&subscriber, nonce) {
+	dao.SaveNonceForStreamClusters(&subscriber, nonce)
+	if !dao.IsACK(&subscriber, nonce) {
 		t.Errorf("Nonce is not set properly..\n")
 	}
 }

@@ -25,6 +25,15 @@ func init() {
 	xdsConfigDao = storage.GetXdsConfigDao()
 }
 
+func (s *Server) FetchClusters(ctx context.Context, in *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+	log.Printf("%+v\n", in)
+	return &v2.DiscoveryResponse{VersionInfo: "2"}, nil
+}
+
+func (s *Server) IncrementalClusters(_ v2.ClusterDiscoveryService_IncrementalClustersServer) error {
+	return errors.New("not implemented")
+}
+
 // StreamClusters bi directional stream to update cluster config
 func (s *Server) StreamClusters(stream v2.ClusterDiscoveryService_StreamClustersServer) error {
 	log.Printf("-------------- Starting a stream ------------------\n")
@@ -109,15 +118,6 @@ func dispatchCluster(ctx context.Context, stream v2.ClusterDiscoveryService_Stre
 			log.Printf("Successfully Sent config to %s \n", subscriber.BuildInstanceKey())
 		}
 	}
-}
-
-func (s *Server) FetchClusters(ctx context.Context, in *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	log.Printf("%+v\n", in)
-	return &v2.DiscoveryResponse{VersionInfo: "2"}, nil
-}
-
-func (s *Server) IncrementalClusters(_ v2.ClusterDiscoveryService_IncrementalClustersServer) error {
-	return errors.New("not implemented")
 }
 
 func consulPoll(ctx context.Context, dispatchChannel chan bool) {

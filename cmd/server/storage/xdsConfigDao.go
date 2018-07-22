@@ -15,10 +15,6 @@ func (dao *XdsConfigDao) GetLatestVersion(sub *model.EnvoySubscriber) string {
 	return dao.consulWrapper.GetString(sub.BuildRootKey() + "version")
 }
 
-func (dao *XdsConfigDao) SetClusterACK(sub *model.EnvoySubscriber, ack string) {
-	dao.consulWrapper.Set(sub.BuildInstanceKey()+"/clusterACK/"+ack, "true")
-}
-
 func (dao *XdsConfigDao) RegisterSubscriber(sub *model.EnvoySubscriber) {
 	id := dao.consulWrapper.GetUniqId()
 	sub.Id = id
