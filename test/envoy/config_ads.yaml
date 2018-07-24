@@ -1,0 +1,22 @@
+admin:
+  access_log_path: /tmp/admin_access.log
+  address:
+    socket_address: { address: 127.0.0.1, port_value: 9901 }
+
+dynamic_resources:
+  cds_config: {ads: {}}
+  lds_config: {ads: {}}
+  ads_config:
+    api_type: GRPC
+    grpc_services:
+      envoy_grpc:
+        cluster_name: ads_cluster    
+static_resources:
+  clusters:
+  - name: ads_cluster
+    connect_timeout: 0.25s
+    type: strict_dns
+    lb_policy: ROUND_ROBIN
+    dns_refresh_rate: 500000000s
+    http2_protocol_options: {}
+    hosts: [{ socket_address: { address: host.docker.internal, port_value: 7777 }}]

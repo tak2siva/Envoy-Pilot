@@ -34,27 +34,35 @@ func buildHosts(rawObj map[string]interface{}) ([]*envoy_api_v2_core1.Address, e
 
 	for i, row := range rawHosts {
 		rowMap := row.(map[string]interface{})
-		addrMap := rowMap["socket_address"].(map[string]interface{})
-		log.Printf("**** %+v\n", addrMap)
-
-		port, err := getUInt(addrMap, "port_value")
+		res, err := buildHost(rowMap)
 		if err != nil {
 			return nil, err
 		}
-
-		list[i] = &envoy_api_v2_core1.Address{
-			Address: &envoy_api_v2_core1.Address_SocketAddress{
-				SocketAddress: &envoy_api_v2_core1.SocketAddress{
-					Protocol: envoy_api_v2_core1.TCP,
-					Address:  getString(addrMap, "address"),
-					PortSpecifier: &envoy_api_v2_core1.SocketAddress_PortValue{
-						PortValue: port,
-					},
-				},
-			},
-		}
+		list[i] = &res
 	}
 	return list, nil
+}
+
+func buildHost(rowMap map[string]interface{}) (envoy_api_v2_core1.Address, error) {
+	addrMap := rowMap["socket_address"].(map[string]interface{})
+
+	port, err := getUInt(addrMap, "port_value")
+	if err != nil {
+		return envoy_api_v2_core1.Address{}, err
+	}
+
+	res := envoy_api_v2_core1.Address{
+		Address: &envoy_api_v2_core1.Address_SocketAddress{
+			SocketAddress: &envoy_api_v2_core1.SocketAddress{
+				Protocol: envoy_api_v2_core1.TCP,
+				Address:  getString(addrMap, "address"),
+				PortSpecifier: &envoy_api_v2_core1.SocketAddress_PortValue{
+					PortValue: port,
+				},
+			},
+		},
+	}
+	return res, nil
 }
 
 func (c *ClusterMapper) GetCluster(clusterJson string) (retCluster *v2.Cluster, retErr error) {
@@ -93,20 +101,6 @@ func (c *ClusterMapper) GetCluster(clusterJson string) (retCluster *v2.Cluster, 
 func (c *ClusterMapper) GetResources(configJson string) ([]types.Any, error) {
 	typeUrl := cache.ClusterType
 	resources := make([]types.Any, 1)
-	// json := `
-	// 	{
-	// 		"name": "bifrost",
-	// 		"connect_timeout": "250",
-	// 		"type": 1,
-	// 		"lb_policy": 0,
-	// 		"hosts": [{
-	// 			"socket_address": {
-	// 				"address": "127.0.0.1",
-	// 				"portValue": 1234
-	// 			}
-	// 		}]
-	// 	}
-	// `
 
 	protoVal, err := c.GetCluster(configJson)
 	if err != nil {

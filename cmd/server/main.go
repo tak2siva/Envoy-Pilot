@@ -33,6 +33,10 @@ func main() {
 
 	s := grpc.NewServer()
 	v2.RegisterClusterDiscoveryServiceServer(s, &server.Server{})
+	v2.RegisterListenerDiscoveryServiceServer(s, &server.Server{})
+	v2.RegisterRouteDiscoveryServiceServer(s, &server.Server{})
+	// discovery.RegisterAggregatedDiscoveryServiceServer(s, &server.Server{})
+
 	reflection.Register(s)
 
 	log.Print("Started grpc server..")

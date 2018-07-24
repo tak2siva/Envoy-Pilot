@@ -15,6 +15,7 @@ type EnvoySubscriber struct {
 	UpdateFailures       int
 	LastUpdatedVersion   string
 	LastUpdatedTimestamp time.Time
+	SubscribedTo         string
 }
 
 func (e *EnvoySubscriber) ToJSON() string {
@@ -27,11 +28,11 @@ func (e *EnvoySubscriber) ToJSON() string {
 }
 
 func (e *EnvoySubscriber) BuildInstanceKey() string {
-	return fmt.Sprintf("cluster/%s/node/%s/%d", e.Cluster, e.Node, e.Id)
+	return fmt.Sprintf("cluster/%s/node/%s/%s/%d", e.Cluster, e.Node, e.SubscribedTo, e.Id)
 }
 
 func (e *EnvoySubscriber) BuildRootKey() string {
-	return fmt.Sprintf("cluster/%s/node/%s/", e.Cluster, e.Node)
+	return fmt.Sprintf("cluster/%s/node/%s/%s/", e.Cluster, e.Node, e.SubscribedTo)
 }
 
 func (e *EnvoySubscriber) IsEqual(that *EnvoySubscriber) bool {

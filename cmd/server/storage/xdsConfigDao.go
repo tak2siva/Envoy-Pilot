@@ -2,6 +2,7 @@ package storage
 
 import (
 	"Envoy-xDS/cmd/server/model"
+	"fmt"
 	"log"
 )
 
@@ -30,23 +31,34 @@ func (dao *XdsConfigDao) IsRepoPresent(sub *model.EnvoySubscriber) bool {
 	return true
 }
 
-func (dao *XdsConfigDao) GetClusterConfigJson(sub *model.EnvoySubscriber) (string, string) {
+func (dao *XdsConfigDao) GetConfigJson(sub *model.EnvoySubscriber) (string, string) {
 	return dao.consulWrapper.GetString(sub.BuildRootKey() + "config"), dao.GetLatestVersion(sub)
 }
 
-func (dao *XdsConfigDao) SaveNonceForStreamClusters(sub *model.EnvoySubscriber, nonce string) {
-	dao.consulWrapper.Set(nonceKey(sub, nonce), "true")
-	log.Printf("Writing ACK %s\n", nonceKey(sub, nonce))
+func (dao *XdsConfigDao) SaveNonce(sub *model.EnvoySubscriber, nonce string) {
+	dao.consulWrapper.Set(nonceStreamKey(sub, nonce), "true")
+	log.Printf("Writing ACK %s\n", nonceStreamKey(sub, nonce))
 }
 
 func (dao *XdsConfigDao) IsACK(sub *model.EnvoySubscriber, ack string) bool {
-	return dao.consulWrapper.Get(nonceKey(sub, ack)) != nil
+	return dao.consulWrapper.Get(nonceStreamKey(sub, ack)) != nil
+}
+
+func (dao *XdsConfigDao) IsListenerACK(sub *model.EnvoySubscriber, ack string) bool {
+	return dao.consulWrapper.Get(nonceStreamKey(sub, ack)) != nil
 }
 
 func (dao *XdsConfigDao) RemoveNonce(sub *model.EnvoySubscriber, nonce string) {
-	err := dao.consulWrapper.Delete(nonceKey(sub, nonce))
+	err := dao.consulWrapper.Delete(nonceStreamKey(sub, nonce))
 	if err != nil {
-		log.Printf("Error deleting nonce %s\n", nonceKey(sub, nonce))
+		log.Printf("Error deleting nonce %s\n", nonceStreamKey(sub, nonce))
+	}
+}
+
+func (dao *XdsConfigDao) RemoveListenerNonce(sub *model.EnvoySubscriber, nonce string) {
+	err := dao.consulWrapper.Delete(nonceStreamKey(sub, nonce))
+	if err != nil {
+		log.Printf("Error deleting nonce %s\n", nonceStreamKey(sub, nonce))
 	}
 }
 
@@ -55,9 +67,13 @@ func (dao *XdsConfigDao) UpdateEnvoySubscriber(sub *model.EnvoySubscriber) {
 	dao.consulWrapper.Set(metaKey(sub), sub.ToJSON())
 }
 
-func nonceKey(sub *model.EnvoySubscriber, nonce string) string {
-	return sub.BuildInstanceKey() + "/Nonce/StreamClusters/" + nonce
+func nonceStreamKey(sub *model.EnvoySubscriber, nonce string) string {
+	return fmt.Sprintf("%s/Nonce/Stream/%s", sub.BuildInstanceKey(), nonce)
 }
+
+// func nonceListenerKey(sub *model.EnvoySubscriber, nonce string) string {
+// 	return sub.BuildInstanceKey() + "/Nonce/StreamListeners/" + nonce
+// }
 
 func metaKey(sub *model.EnvoySubscriber) string {
 	return sub.BuildInstanceKey() + "/meta"

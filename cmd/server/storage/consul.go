@@ -31,6 +31,22 @@ func GetConsulWrapper() ConsulWrapper {
 
 // TODO add retry
 func (c *ConsulWrapper) GetUniqId() int {
+	for i := 0; i < 100; i++ {
+		res, id, err := c.checkAndSetUniqId()
+		if err != nil {
+			log.Println("Error updating uniq CAS")
+			panic(err)
+		}
+		if res {
+			return id
+		}
+		log.Println("Re generating uniq id")
+	}
+
+	panic("Unable to generate new id")
+}
+
+func (c *ConsulWrapper) checkAndSetUniqId() (bool, int, error) {
 	pair, _, err := c.client.KV().Get(envoySubscriberSequenceKey, nil)
 	if err != nil {
 		panic(err)
@@ -46,20 +62,11 @@ func (c *ConsulWrapper) GetUniqId() int {
 		panic(err)
 	}
 
-	// log.Printf("Last id value is %d\n", id)
+	log.Printf("Last id value is %d\n", id)
 	newId := id + 1
 	pair.Value = []byte(strconv.Itoa(newId))
 	res, _, err := c.client.KV().CAS(pair, nil)
-
-	if !res {
-		panic("Error Updating uniq id CAS")
-	}
-	if err != nil {
-		log.Println("Error updating uniq CAS")
-		panic(err)
-	}
-	// log.Printf("New uniq id is %d\n", newId)
-	return newId
+	return res, newId, err
 }
 
 func (c *ConsulWrapper) Set(key string, value string) {
