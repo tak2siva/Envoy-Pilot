@@ -2,12 +2,17 @@ package storage
 
 import (
 	"log"
+	"os"
 	"strconv"
+	"sync"
 
 	consul "github.com/hashicorp/consul/api"
+	"github.com/joho/godotenv"
 )
 
 var singletonConsulWrapper ConsulWrapper
+var CONSUL_PATH string
+var mux sync.Mutex
 
 const (
 	envoySubscriberSequenceKey = "envoySubscriberSequence"
@@ -18,9 +23,20 @@ type ConsulWrapper struct {
 }
 
 func GetConsulWrapper() ConsulWrapper {
+	mux.Lock()
+	defer mux.Unlock()
 	if singletonConsulWrapper.client == nil {
+		err := godotenv.Load("/.env")
+		if err != nil {
+			log.Print(err)
+			log.Fatal("Error loading .env file")
+		}
+		consulPath := os.Getenv("CONSUL_PATH")
+		log.Printf("Consul Path: %s\n", consulPath)
+		config := &consul.Config{Address: consulPath}
+
 		singletonConsulWrapper = ConsulWrapper{}
-		client, err := consul.NewClient(&consul.Config{Address: "host.docker.internal:8500"})
+		client, err := consul.NewClient(config)
 		if err != nil {
 			panic(err)
 		}
@@ -54,7 +70,8 @@ func (c *ConsulWrapper) checkAndSetUniqId() (bool, int, error) {
 	if pair == nil {
 		log.Println("nil value...")
 		c.Set(envoySubscriberSequenceKey, "1")
-		pair = c.Get(envoySubscriberSequenceKey)
+		return true, 1, nil
+		// pair = c.Get(envoySubscriberSequenceKey)
 	}
 	id, err := strconv.Atoi(string(pair.Value))
 	if err != nil {
@@ -70,6 +87,7 @@ func (c *ConsulWrapper) checkAndSetUniqId() (bool, int, error) {
 }
 
 func (c *ConsulWrapper) Set(key string, value string) {
+	log.Println(c.client)
 	p := &consul.KVPair{Key: key, Value: []byte(value)}
 	_, err := c.client.KV().Put(p, nil)
 	if err != nil {
@@ -83,9 +101,9 @@ func (c *ConsulWrapper) Get(key string) *consul.KVPair {
 	if err != nil {
 		panic(err)
 	}
-	if pair == nil {
-		log.Printf("Nil value for key %s\n", key)
-	}
+	// if pair == nil {
+	// log.Printf("Nil value for key %s\n", key)
+	// }
 	return pair
 }
 

@@ -4,4 +4,7 @@ ADD cmd /go/src/Envoy-xDS/cmd
 ADD lib /go/src/Envoy-xDS/lib
 
 RUN rm -rf  /go/src/github.com/envoyproxy/go-control-plane/vendor
-RUN go build -o /go/src/Envoy-xDS/cmd/server/main /go/src/Envoy-xDS/cmd/server/main.go
+RUN go build -o /go/bin/Envoy-xDS /go/src/Envoy-xDS/cmd/server/main.go
+
+WORKDIR /go/bin 
+CMD ["./Envoy-xDS"]

@@ -36,6 +36,19 @@ func getString(obj map[string]interface{}, key string) string {
 	return obj[key].(string)
 }
 
+func getStringArray(obj map[string]interface{}, key string) []string {
+	arr := obj[key].([]interface{})
+	res := make([]string, len(arr))
+	for i, value := range arr {
+		res[i] = value.(string)
+	}
+	return res
+}
+
 func getFloat(obj map[string]interface{}, key string) float64 {
 	return obj[key].(float64)
+}
+
+func toMap(obj interface{}) map[string]interface{} {
+	return obj.(map[string]interface{})
 }

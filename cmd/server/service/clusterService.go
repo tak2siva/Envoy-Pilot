@@ -52,7 +52,7 @@ func (c *ClusterService) consulPoll(ctx context.Context, dispatchChannel chan bo
 		subscriber := ctx.Value(envoySubscriberKey).(*model.EnvoySubscriber)
 		log.Printf("Checking consul for %s..\n", subscriber.BuildInstanceKey())
 		if !c.xdsConfigDao.IsRepoPresent(subscriber) {
-			log.Println("No repo found for subscriber %s\n", subscriber.BuildInstanceKey())
+			log.Printf("No repo found for subscriber %s\n", subscriber.BuildInstanceKey())
 			continue
 		}
 		if c.IsOutdated(subscriber) {

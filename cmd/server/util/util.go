@@ -7,6 +7,12 @@ import (
 func Check(err error) {
 	if err != nil {
 		log.Println("[Util] Error..", err)
-		// panic(err)
+	}
+}
+
+func CheckAndPanic(err error) {
+	if err != nil {
+		log.Println("[Util] Error..", err)
+		panic(err)
 	}
 }

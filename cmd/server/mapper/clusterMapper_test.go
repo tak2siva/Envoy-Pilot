@@ -18,7 +18,7 @@ func TestClusterMapper_GetCluster(t *testing.T) {
 	json := `
 	{
 		"name": "bifrost",
-		"connect_timeout": "250",
+		"connect_timeout": "5s",
 		"type": "STRICT_DNS",
 		"lb_policy": "ROUND_ROBIN",
 		"hosts": [{
@@ -29,9 +29,10 @@ func TestClusterMapper_GetCluster(t *testing.T) {
 		}]
 	}
 	`
+
 	expectedObj := v2.Cluster{
 		Name:           "bifrost",
-		ConnectTimeout: 250 * time.Millisecond,
+		ConnectTimeout: 5 * time.Second,
 		Type:           v2.Cluster_STRICT_DNS,
 		LbPolicy:       v2.Cluster_ROUND_ROBIN,
 		Hosts: []*envoy_api_v2_core1.Address{
@@ -47,5 +48,13 @@ func TestClusterMapper_GetCluster(t *testing.T) {
 
 	if diff := deep.Equal(actualObj, &expectedObj); diff != nil {
 		t.Error(diff)
+	}
+}
+
+func TestClusterMapper_BuildDuration(t *testing.T) {
+	res := BuildDuration("5s")
+	expected := 5 * time.Second
+	if res != expected {
+		t.Errorf("incorrect time parse: %d, want: %d.", res, expected)
 	}
 }

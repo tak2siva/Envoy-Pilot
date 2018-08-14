@@ -14,6 +14,7 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	als "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v2"
 	alf "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
@@ -23,7 +24,13 @@ import (
 
 type ListenerMapper struct{}
 
-func buildRds(rawConfig map[string]interface{}) hcm.HttpConnectionManager_Rds {
+func buildRds(rawConfigObj interface{}) hcm.HttpConnectionManager_Rds {
+	var rawConfig map[string]interface{}
+	if rawConfig != nil {
+		rawConfig = rawConfigObj.(map[string]interface{})
+	} else {
+		return hcm.HttpConnectionManager_Rds{}
+	}
 	rdsSource := core.ConfigSource{}
 	configSource := rawConfig["config_source"].(map[string]interface{})
 	sourceMap := configSource["api_config_source"].(map[string]interface{})
@@ -50,7 +57,79 @@ func buildRds(rawConfig map[string]interface{}) hcm.HttpConnectionManager_Rds {
 	}
 }
 
-func buildAccessLog(rawAlsArray []interface{}) []*alf.AccessLog {
+func buildRoutes(rawObj interface{}) []envoy_api_v2_route.Route {
+	if rawObj == nil {
+		return make([]envoy_api_v2_route.Route, 0)
+	}
+	routes := rawObj.([]interface{})
+	res := make([]envoy_api_v2_route.Route, len(routes))
+
+	for i, route := range routes {
+		routeMap := toMap(route)
+		matchMap := toMap(routeMap["match"])
+		routeRouteMap := toMap(routeMap["route"])
+		res[i] = envoy_api_v2_route.Route{
+			Match: envoy_api_v2_route.RouteMatch{
+				PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
+					Prefix: getString(matchMap, "prefix"),
+				},
+			},
+			Action: &envoy_api_v2_route.Route_Route{
+				Route: &envoy_api_v2_route.RouteAction{
+					ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+						Cluster: getString(routeRouteMap, "cluster"),
+					},
+				},
+			},
+		}
+	}
+	return res
+}
+
+func buildVHosts(rawVHosts interface{}) []envoy_api_v2_route.VirtualHost {
+	if rawVHosts == nil {
+		return make([]envoy_api_v2_route.VirtualHost, 0)
+	}
+	vhosts := rawVHosts.([]interface{})
+	res := make([]envoy_api_v2_route.VirtualHost, len(vhosts))
+
+	for i, vhost := range vhosts {
+		vhostMap := toMap(vhost)
+		res[i] = envoy_api_v2_route.VirtualHost{
+			Name:    getString(vhostMap, "name"),
+			Domains: getStringArray(vhostMap, "domains"),
+			Routes:  buildRoutes(vhostMap["routes"]),
+		}
+	}
+
+	return res
+}
+
+func buildRouteConfig(rawObj interface{}) hcm.HttpConnectionManager_RouteConfig {
+	var routeConfigMap map[string]interface{}
+	if rawObj != nil {
+		routeConfigMap = rawObj.(map[string]interface{})
+	} else {
+		return hcm.HttpConnectionManager_RouteConfig{}
+	}
+
+	rConfig := v2.RouteConfiguration{
+		Name:         getString(routeConfigMap, "name"),
+		VirtualHosts: buildVHosts(routeConfigMap["virtual_hosts"]),
+	}
+
+	return hcm.HttpConnectionManager_RouteConfig{
+		RouteConfig: &rConfig,
+	}
+}
+
+func buildAccessLog(rawAlsArrayObj interface{}) []*alf.AccessLog {
+	var rawAlsArray []interface{}
+	if rawAlsArrayObj != nil {
+		rawAlsArray = rawAlsArrayObj.([]interface{})
+	} else {
+		return make([]*alf.AccessLog, 0)
+	}
 	res := make([]*alf.AccessLog, len(rawAlsArray))
 	for i, rawAls := range rawAlsArray {
 		alsMap := rawAls.(map[string]interface{})
@@ -74,16 +153,26 @@ func buildAccessLog(rawAlsArray []interface{}) []*alf.AccessLog {
 }
 
 func buildHttpConnectionManager(rawConfig map[string]interface{}) hcm.HttpConnectionManager {
-	rds := buildRds(rawConfig["rds"].(map[string]interface{}))
-	als := buildAccessLog(rawConfig["access_log"].([]interface{}))
+	als := buildAccessLog(rawConfig["access_log"])
 	manager := hcm.HttpConnectionManager{
-		CodecType:      hcm.AUTO,
-		StatPrefix:     getString(rawConfig, "stat_prefix"),
-		RouteSpecifier: &rds,
+		CodecType:  hcm.AUTO,
+		StatPrefix: getString(rawConfig, "stat_prefix"),
+		// RouteSpecifier: &rds,
 		HttpFilters: []*hcm.HttpFilter{{
 			Name: util.Router,
 		}},
 		AccessLog: als,
+	}
+
+	if rawConfig["rds"] != nil {
+		rds := buildRds(rawConfig["rds"])
+		manager.RouteSpecifier = &rds
+	} else if rawConfig["route_config"] != nil {
+		// routeSpec = buildRds(rawConfig["rds"])
+		routeConfig := buildRouteConfig(rawConfig["route_config"])
+		manager.RouteSpecifier = &routeConfig
+	} else {
+		panic("Rds or Routeconfig should be present")
 	}
 
 	return manager

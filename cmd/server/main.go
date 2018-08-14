@@ -1,7 +1,9 @@
 package main
 
 import (
+	"Envoy-xDS/cmd/server/dump"
 	"Envoy-xDS/cmd/server/server"
+	"Envoy-xDS/cmd/server/storage"
 	"fmt"
 	"log"
 	"net"
@@ -17,15 +19,18 @@ import (
 var consulHandle *consul.KV
 
 func init() {
-	consulClient, err := consul.NewClient(&consul.Config{Address: "host.docker.internal:8500"})
-	if err != nil {
-		panic(err)
-	}
-	consulHandle = consulClient.KV()
-	log.SetFlags(log.Llongfile)
+	//host.docker.internal:8500
+	log.SetFlags(log.LstdFlags | log.Llongfile)
+	consulHealthCheck()
+}
+
+func consulHealthCheck() {
+	cwrapper := storage.GetConsulWrapper()
+	cwrapper.GetUniqId()
 }
 
 func main() {
+	go dump.SetUpHttpServer()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 7777))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)

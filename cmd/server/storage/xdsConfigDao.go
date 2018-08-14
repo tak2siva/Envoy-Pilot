@@ -71,10 +71,6 @@ func nonceStreamKey(sub *model.EnvoySubscriber, nonce string) string {
 	return fmt.Sprintf("%s/Nonce/Stream/%s", sub.BuildInstanceKey(), nonce)
 }
 
-// func nonceListenerKey(sub *model.EnvoySubscriber, nonce string) string {
-// 	return sub.BuildInstanceKey() + "/Nonce/StreamListeners/" + nonce
-// }
-
 func metaKey(sub *model.EnvoySubscriber) string {
 	return sub.BuildInstanceKey() + "/meta"
 }

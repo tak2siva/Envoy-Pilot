@@ -1,6 +1,7 @@
 package mapper
 
 import (
+	"fmt"
 	"log"
 	"testing"
 
@@ -153,4 +154,71 @@ func TestListenerMapper_GetListener(t *testing.T) {
 	if diff := deep.Equal(actualObj, &expectedListener); diff != nil {
 		t.Error(diff)
 	}
+}
+func TestListenerMapper_GetListenerWithoutRds(t *testing.T) {
+	jsonStr := `
+	{
+		"name": "listener_0",
+		"address": {
+			"socket_address": {
+				"address": "0.0.0.0",
+				"port_value": 80
+			}
+		},
+		"filter_chains": [
+			{
+				"filters": [
+					{
+						"name": "envoy.http_connection_manager",
+						"config": {
+							"stat_prefix": "ingress_http",
+							"codec_type": "AUTO",
+							"route_config": {
+								"name": "local_http_router",
+								"virtual_hosts": [
+									{
+										"name": "local_service",
+										"domains": [
+											"*"
+										],
+										"routes": [
+											{
+												"match": {
+													"prefix": "/"
+												},
+												"route": {
+													"cluster": "app1"
+												}
+											}
+										]
+									}
+								]
+							},
+							"http_filters": [
+								{
+									"name": "envoy.health_check",
+									"config": {
+										"pass_through_mode": false,
+										"endpoint": "/healthz"
+									}
+								},
+								{
+									"name": "envoy.router"
+								}
+							]
+						}
+					}
+				]
+			}
+		]
+	}
+	`
+
+	actualObj, _ := listenerMapper.GetListener(jsonStr)
+	marshaler := &jsonpb.Marshaler{}
+	actJson, err := marshaler.MarshalToString(actualObj)
+	if err != nil {
+		log.Panic(err)
+	}
+	fmt.Println(actJson)
 }

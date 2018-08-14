@@ -1,6 +1,7 @@
 package mapper
 
 import (
+	"Envoy-xDS/cmd/server/util"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -65,6 +66,18 @@ func buildHost(rowMap map[string]interface{}) (envoy_api_v2_core1.Address, error
 	return res, nil
 }
 
+func BuildDuration(str string) time.Duration {
+	res, err := time.ParseDuration(str)
+	if err != nil {
+		log.Printf("Error parsing string to duration %s\n", str)
+		log.Println(err)
+		panic("Error parsing duration")
+	}
+	// log.Printf("time json: %s\n", str)
+	// log.Printf("time parsed: %d\n", res)
+	return res
+}
+
 func (c *ClusterMapper) GetCluster(clusterJson string) (retCluster *v2.Cluster, retErr error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -78,15 +91,12 @@ func (c *ClusterMapper) GetCluster(clusterJson string) (retCluster *v2.Cluster, 
 	var rawObj = make(map[string]interface{})
 	var clusterObj = &v2.Cluster{}
 
-	json.Unmarshal([]byte(clusterJson), &rawObj)
+	err := json.Unmarshal([]byte(clusterJson), &rawObj)
+	util.Check(err)
 
 	clusterObj.Name = rawObj["name"].(string)
-	// TODO add duration unmarshal
-	cxTimeout, err := getInt(rawObj, "connect_timeout")
-	if err != nil {
-		return nil, err
-	}
-	clusterObj.ConnectTimeout = time.Duration(cxTimeout) * time.Millisecond
+	cxTimeout := BuildDuration(getString(rawObj, "connect_timeout"))
+	clusterObj.ConnectTimeout = cxTimeout
 	clusterObj.Type = buildDnsType(rawObj)
 	clusterObj.LbPolicy = buildLbPolicy(rawObj)
 
