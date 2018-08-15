@@ -50,7 +50,7 @@ func configDumpLDS(w http.ResponseWriter, r *http.Request) {
 	cwrapper := storage.GetConsulWrapper()
 	jsonStr := cwrapper.GetString(keyPath)
 	fmt.Printf("json dump %s\n", jsonStr)
-	val, err := m.GetListener(jsonStr)
+	val, err := m.GetListeners(jsonStr)
 
 	if err != nil {
 		fmt.Fprintf(w, "Error creating obj %s", err)

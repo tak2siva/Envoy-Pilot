@@ -41,11 +41,16 @@ func testRoute() (*v2.RouteConfiguration, error) {
 	return &route, nil
 }
 
+// func (r *RouteMapper) GetRoute(configJson string) (*v2.RouteConfiguration, error) {
+
+// }
+
 func (r *RouteMapper) GetResources(configJson string) ([]types.Any, error) {
 	typeUrl := cache.RouteType
 	resources := make([]types.Any, 1)
 
 	protoVal, err := testRoute()
+	// protoVal, err := r.GetRoute(configJson)
 	if err != nil {
 		log.Printf("Error parsing listener config")
 		return nil, err

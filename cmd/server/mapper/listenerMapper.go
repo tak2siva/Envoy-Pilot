@@ -27,7 +27,7 @@ type ListenerMapper struct{}
 
 func buildRds(rawConfigObj interface{}) hcm.HttpConnectionManager_Rds {
 	var rawConfig map[string]interface{}
-	if rawConfig != nil {
+	if rawConfigObj != nil {
 		rawConfig = rawConfigObj.(map[string]interface{})
 	} else {
 		return hcm.HttpConnectionManager_Rds{}
@@ -35,18 +35,23 @@ func buildRds(rawConfigObj interface{}) hcm.HttpConnectionManager_Rds {
 	rdsSource := core.ConfigSource{}
 	configSource := rawConfig["config_source"].(map[string]interface{})
 	sourceMap := configSource["api_config_source"].(map[string]interface{})
-	// grpcService := sourceMap["grpc_services"].([]interface{})
-	grpcService := sourceMap["grpc_services"].(map[string]interface{})
-	envoyGrpc := grpcService["envoy_grpc"].(map[string]interface{})
+	grpcServices := sourceMap["grpc_services"].([]interface{})
+
+	resGrpcServices := make([]*core.GrpcService, len(grpcServices))
+	for i, grpcService := range grpcServices {
+		grpcServiceMap := toMap(grpcService)
+		envoyGrpc := toMap(grpcServiceMap["envoy_grpc"])
+		resGrpcServices[i] = &core.GrpcService{
+			TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
+				EnvoyGrpc: &core.GrpcService_EnvoyGrpc{ClusterName: getString(envoyGrpc, "cluster_name")},
+			},
+		}
+	}
 
 	rdsSource.ConfigSourceSpecifier = &core.ConfigSource_ApiConfigSource{
 		ApiConfigSource: &core.ApiConfigSource{
-			ApiType: core.ApiConfigSource_GRPC,
-			GrpcServices: []*core.GrpcService{{
-				TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
-					EnvoyGrpc: &core.GrpcService_EnvoyGrpc{ClusterName: getString(envoyGrpc, "cluster_name")},
-				},
-			}},
+			ApiType:      core.ApiConfigSource_GRPC,
+			GrpcServices: resGrpcServices,
 		},
 	}
 
@@ -260,7 +265,33 @@ func buildFilterChains(rawFilterChains []interface{}) ([]listener.FilterChain, e
 	return pbFilterChains, nil
 }
 
-func (c *ListenerMapper) GetListener(clusterJson string) (retListener *v2.Listener, retErr error) {
+func (c *ListenerMapper) GetListener(rawObj interface{}) (retListener v2.Listener, retErr error) {
+	var listenerObj = v2.Listener{}
+	var rawListener map[string]interface{}
+	if rawObj == nil {
+		return listenerObj, nil
+	} else {
+		rawListener = rawObj.(map[string]interface{})
+	}
+
+	log.Println("*************")
+	for k := range rawListener {
+		log.Println(k)
+	}
+	log.Println("*************")
+
+	listenerObj.Name = rawListener["name"].(string)
+	addr, err := buildHost(rawListener["address"].(map[string]interface{}))
+	if err != nil {
+		return listenerObj, err
+	}
+	listenerObj.Address = addr
+	filterChains, _ := buildFilterChains(rawListener["filter_chains"].([]interface{}))
+	listenerObj.FilterChains = filterChains
+	return listenerObj, nil
+}
+
+func (c *ListenerMapper) GetListeners(listenerJson string) (retListener []v2.Listener, retErr error) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("*********************************")
@@ -269,50 +300,42 @@ func (c *ListenerMapper) GetListener(clusterJson string) (retListener *v2.Listen
 			retErr = errors.New(fmt.Sprintf("%s", r))
 		}
 	}()
-	var rawObj = make(map[string]interface{})
-	var listenerObj = &v2.Listener{}
-	err := json.Unmarshal([]byte(clusterJson), &rawObj)
-
+	var rawArr []interface{}
+	err := json.Unmarshal([]byte(listenerJson), &rawArr)
 	if err != nil {
 		panic(err)
 	}
 
-	log.Println("*************")
-	for k := range rawObj {
-		log.Println(k)
+	var listeners = make([]v2.Listener, len(rawArr))
+	for i, rawListener := range rawArr {
+		val, err := c.GetListener(rawListener)
+		if err != nil {
+			panic(err)
+		}
+		listeners[i] = val
 	}
-	log.Println("*************")
-
-	listenerObj.Name = rawObj["name"].(string)
-	addr, err := buildHost(rawObj["address"].(map[string]interface{}))
-	if err != nil {
-		return nil, err
-	}
-	listenerObj.Address = addr
-	filterChains, _ := buildFilterChains(rawObj["filter_chains"].([]interface{}))
-	listenerObj.FilterChains = filterChains
-	return listenerObj, nil
+	return listeners, nil
 }
 
 func (l *ListenerMapper) GetResources(configJson string) ([]types.Any, error) {
 	typeUrl := cache.ListenerType
-	resources := make([]types.Any, 1)
 
-	protoVal, err := l.GetListener(configJson)
+	listeners, err := l.GetListeners(configJson)
 	if err != nil {
 		log.Printf("Error parsing listener config")
 		return nil, err
 	}
-	data, err := proto.Marshal(protoVal)
-	if err != nil {
-		log.Printf("Error building cluster resource...\n")
-		return nil, err
-	}
+	resources := make([]types.Any, len(listeners))
 
-	resources[0] = types.Any{
-		Value:   data,
-		TypeUrl: typeUrl,
+	for i, listener := range listeners {
+		data, err := proto.Marshal(&listener)
+		if err != nil {
+			log.Panic(err)
+		}
+		resources[i] = types.Any{
+			Value:   data,
+			TypeUrl: typeUrl,
+		}
 	}
-
 	return resources, nil
 }
