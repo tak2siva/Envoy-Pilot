@@ -140,6 +140,12 @@ cluster0_json = %Q{
     }
 }
 
+clusters_json = %Q{
+    [
+        #{cluster0_json}
+    ]
+}
+
 route0_json = %Q{
     {
         "name": "listener_1_route",
@@ -184,7 +190,7 @@ describe "xDS" do
         cdelete(LISTENER_KEY)
         cdelete(ROUTE_KEY)
 
-        cset("#{CLUSTER_KEY}/config", cluster0_json)
+        cset("#{CLUSTER_KEY}/config", clusters_json)
         cset("#{CLUSTER_KEY}/version", cluster_version)
 
         cset("#{LISTENER_KEY}/config", listeners_json)
@@ -203,9 +209,9 @@ describe "xDS" do
         actual = actual.to_snake_keys
         actualVersion = json["configs"]["clusters"]["dynamicActiveClusters"][0]["versionInfo"]
         
-        expected = JSON.parse(cluster0_json)
+        expected = JSON.parse(clusters_json)
         
-        expect(actual).to eq(expected)
+        expect(actual).to eq(expected[0])
         expect(actualVersion).to eq(cluster_version)
     end
 

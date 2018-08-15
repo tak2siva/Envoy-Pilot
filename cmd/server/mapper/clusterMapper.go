@@ -1,7 +1,6 @@
 package mapper
 
 import (
-	"Envoy-xDS/cmd/server/util"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -73,12 +72,34 @@ func BuildDuration(str string) time.Duration {
 		log.Println(err)
 		panic("Error parsing duration")
 	}
-	// log.Printf("time json: %s\n", str)
-	// log.Printf("time parsed: %d\n", res)
 	return res
 }
 
-func (c *ClusterMapper) GetCluster(clusterJson string) (retCluster *v2.Cluster, retErr error) {
+func (c *ClusterMapper) GetCluster(rawObj interface{}) (retCluster v2.Cluster, retErr error) {
+	var rawObjMap map[string]interface{}
+	if rawObj != nil {
+		rawObjMap = toMap(rawObj)
+	} else {
+		return v2.Cluster{}, nil
+	}
+
+	var clusterObj = v2.Cluster{}
+
+	clusterObj.Name = rawObjMap["name"].(string)
+	cxTimeout := BuildDuration(getString(rawObjMap, "connect_timeout"))
+	clusterObj.ConnectTimeout = cxTimeout
+	clusterObj.Type = buildDnsType(rawObjMap)
+	clusterObj.LbPolicy = buildLbPolicy(rawObjMap)
+
+	hosts, err := buildHosts(rawObjMap)
+	if err != nil {
+		log.Panic(err)
+	}
+	clusterObj.Hosts = hosts
+	return clusterObj, nil
+}
+
+func (c *ClusterMapper) GetClusters(clusterJson string) (retCluster []*v2.Cluster, retErr error) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("*********************************")
@@ -88,44 +109,44 @@ func (c *ClusterMapper) GetCluster(clusterJson string) (retCluster *v2.Cluster, 
 		}
 	}()
 
-	var rawObj = make(map[string]interface{})
-	var clusterObj = &v2.Cluster{}
-
-	err := json.Unmarshal([]byte(clusterJson), &rawObj)
-	util.Check(err)
-
-	clusterObj.Name = rawObj["name"].(string)
-	cxTimeout := BuildDuration(getString(rawObj, "connect_timeout"))
-	clusterObj.ConnectTimeout = cxTimeout
-	clusterObj.Type = buildDnsType(rawObj)
-	clusterObj.LbPolicy = buildLbPolicy(rawObj)
-
-	hosts, err := buildHosts(rawObj)
+	var rawArr []interface{}
+	err := json.Unmarshal([]byte(clusterJson), &rawArr)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	clusterObj.Hosts = hosts
-	return clusterObj, nil
+
+	var clusters = make([]*v2.Cluster, len(rawArr))
+	for i, rawCluster := range rawArr {
+		val, err := c.GetCluster(rawCluster)
+		if err != nil {
+			panic(err)
+		}
+		clusters[i] = &val
+	}
+	return clusters, nil
 }
 
 func (c *ClusterMapper) GetResources(configJson string) ([]types.Any, error) {
 	typeUrl := cache.ClusterType
-	resources := make([]types.Any, 1)
 
-	protoVal, err := c.GetCluster(configJson)
+	clusters, err := c.GetClusters(configJson)
 	if err != nil {
 		log.Printf("Error parsing cluster config")
 		return nil, err
 	}
-	data, err := proto.Marshal(protoVal)
-	if err != nil {
-		log.Printf("Error building cluster resource...\n")
-		return nil, err
-	}
 
-	resources[0] = types.Any{
-		Value:   data,
-		TypeUrl: typeUrl,
+	resources := make([]types.Any, len(clusters))
+
+	for i, cluster := range clusters {
+		data, err := proto.Marshal(cluster)
+		if err != nil {
+			log.Printf("Error marshalling cluster...\n")
+			log.Panic(err)
+		}
+		resources[i] = types.Any{
+			Value:   data,
+			TypeUrl: typeUrl,
+		}
 	}
 
 	return resources, err
