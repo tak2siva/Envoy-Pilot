@@ -1,0 +1,1 @@
+CONSUL_PATH="http://consul-server-bootstrap:8500"

@@ -8,7 +8,7 @@ Diplomat.configure do |config|
 end
 
 describe "xDS" do
-    xit "Add a cluster" do
+    it "Add a cluster" do
         CLUSTER_KEY = "cluster/cdstest-cluster/node/cdstest-node/cluster"
         cdelete(CLUSTER_KEY)
 
@@ -65,6 +65,7 @@ describe "xDS" do
                                 "name": "envoy.http_connection_manager",
                                 "config": {
                                     "stat_prefix": "ingress_http",
+                                    "access_log": [],
                                     "codec_type": "HTTP2",
                                     "route_config": {
                                         "name": "local_http_router",
@@ -107,9 +108,9 @@ describe "xDS" do
             }
         }
 
-        # cset("#{LISTENER_KEY}/config", jsonStr)
-        # cset("#{LISTENER_KEY}/version", version)
-        # sleep 12
+        cset("#{LISTENER_KEY}/config", jsonStr)
+        cset("#{LISTENER_KEY}/version", version)
+        sleep 12
 
         resp = RestClient.get 'http://localhost:9901/config_dump'
         json = JSON.parse(resp)

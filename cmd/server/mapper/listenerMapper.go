@@ -17,6 +17,7 @@ import (
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	als "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v2"
 	alf "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
+	hc "github.com/envoyproxy/go-control-plane/envoy/config/filter/http/health_check/v2"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
@@ -152,16 +153,69 @@ func buildAccessLog(rawAlsArrayObj interface{}) []*alf.AccessLog {
 	return res
 }
 
+type httpFilterConfig struct {
+	PassThroughMode bool
+	Endpoint        string
+}
+
+func (m *httpFilterConfig) Reset()         { *m = httpFilterConfig{} }
+func (m *httpFilterConfig) String() string { return proto.CompactTextString(m) }
+func (*httpFilterConfig) ProtoMessage()    {}
+
+func (m *httpFilterConfig) GetPassThroughMode() bool {
+	if m != nil {
+		return m.PassThroughMode
+	}
+	return false
+}
+
+func (m *httpFilterConfig) GetEndpoint() string {
+	if m != nil {
+		return m.Endpoint
+	}
+	return ""
+}
+
+func buildHttpFilter(rawConfig interface{}) []*hcm.HttpFilter {
+	if rawConfig == nil {
+		return make([]*hcm.HttpFilter, 0)
+	}
+	filters := rawConfig.([]interface{})
+	res := make([]*hcm.HttpFilter, len(filters))
+
+	for i, filter := range filters {
+		filterMap := toMap(filter)
+
+		fc := &hcm.HttpFilter{
+			Name: getString(filterMap, "name"),
+		}
+		if filterMap["config"] != nil {
+			configMap := toMap(filterMap["config"])
+			hfconfig2 := hc.HealthCheck{
+				PassThroughMode: &types.BoolValue{Value: getBoolean(configMap, "pass_through_mode")},
+				Endpoint:        getString(configMap, "endpoint"),
+			}
+			pbConfig2, err := util.MessageToStruct(&hfconfig2)
+			if err != nil {
+				log.Panic(err)
+			}
+			fc.Config = pbConfig2
+		}
+
+		res[i] = fc
+	}
+
+	return res
+}
+
 func buildHttpConnectionManager(rawConfig map[string]interface{}) hcm.HttpConnectionManager {
 	als := buildAccessLog(rawConfig["access_log"])
+	codec := hcm.HttpConnectionManager_CodecType_value[getString(rawConfig, "codec_type")]
 	manager := hcm.HttpConnectionManager{
-		CodecType:  hcm.AUTO,
-		StatPrefix: getString(rawConfig, "stat_prefix"),
-		// RouteSpecifier: &rds,
-		HttpFilters: []*hcm.HttpFilter{{
-			Name: util.Router,
-		}},
-		AccessLog: als,
+		CodecType:   hcm.HttpConnectionManager_CodecType(codec),
+		StatPrefix:  getString(rawConfig, "stat_prefix"),
+		HttpFilters: buildHttpFilter(rawConfig["http_filters"]),
+		AccessLog:   als,
 	}
 
 	if rawConfig["rds"] != nil {

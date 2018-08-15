@@ -36,6 +36,10 @@ func getString(obj map[string]interface{}, key string) string {
 	return obj[key].(string)
 }
 
+func getBoolean(obj map[string]interface{}, key string) bool {
+	return obj[key].(bool)
+}
+
 func getStringArray(obj map[string]interface{}, key string) []string {
 	arr := obj[key].([]interface{})
 	res := make([]string, len(arr))
