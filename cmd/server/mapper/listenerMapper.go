@@ -111,7 +111,7 @@ func buildVHosts(rawVHosts interface{}) []envoy_api_v2_route.VirtualHost {
 	return res
 }
 
-func buildRouteConfig(rawObj interface{}) hcm.HttpConnectionManager_RouteConfig {
+func BuildRouteConfig(rawObj interface{}) hcm.HttpConnectionManager_RouteConfig {
 	var routeConfigMap map[string]interface{}
 	if rawObj != nil {
 		routeConfigMap = rawObj.(map[string]interface{})
@@ -228,7 +228,7 @@ func buildHttpConnectionManager(rawConfig map[string]interface{}) hcm.HttpConnec
 		manager.RouteSpecifier = &rds
 	} else if rawConfig["route_config"] != nil {
 		// routeSpec = buildRds(rawConfig["rds"])
-		routeConfig := buildRouteConfig(rawConfig["route_config"])
+		routeConfig := BuildRouteConfig(rawConfig["route_config"])
 		manager.RouteSpecifier = &routeConfig
 	} else {
 		panic("Rds or Routeconfig should be present")

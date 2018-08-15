@@ -140,22 +140,60 @@ cluster0_json = %Q{
     }
 }
 
+route0_json = %Q{
+    {
+        "name": "listener_1_route",
+        "virtual_hosts": [
+            {
+                "name": "local_service",
+                "domains": [
+                    "*"
+                ],
+                "routes": [
+                    {
+                        "match": {
+                            "prefix": "/"
+                        },
+                        "route": {
+                            "cluster": "app1"
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+}
+
+routes_json = %Q{
+    [
+        #{route0_json}
+    ]
+}
+
 cluster_version = "1.0"
 listener_version = "1.0"
+route_version = "1.0"
 
 describe "xDS" do
     before(:all) do
         CLUSTER_KEY = "cluster/cdstest-cluster/node/cdstest-node/cluster"
         LISTENER_KEY = "cluster/cdstest-cluster/node/cdstest-node/listener"
+        ROUTE_KEY = "cluster/cdstest-cluster/node/cdstest-node/route"
+
         cdelete(CLUSTER_KEY)
         cdelete(LISTENER_KEY)
+        cdelete(ROUTE_KEY)
 
         cset("#{CLUSTER_KEY}/config", cluster0_json)
         cset("#{CLUSTER_KEY}/version", cluster_version)
 
         cset("#{LISTENER_KEY}/config", listeners_json)
         cset("#{LISTENER_KEY}/version", listener_version)
-        sleep 15
+
+        cset("#{ROUTE_KEY}/config", routes_json)
+        cset("#{ROUTE_KEY}/version", route_version)
+
+        sleep 20
     end
 
     it "Add a cluster" do
@@ -195,6 +233,19 @@ describe "xDS" do
         
         expect(actual).to eq(expected[1])
         expect(actualVersion).to eq(listener_version)
+    end
+
+    it 'Add a dynamic route' do
+        resp = RestClient.get 'http://localhost:9901/config_dump'
+        json = JSON.parse(resp)
+        actual = json["configs"]["routes"]["dynamicRouteConfigs"][0]["routeConfig"]
+        actual = actual.to_snake_keys
+        actualVersion = json["configs"]["routes"]["dynamicRouteConfigs"][0]["versionInfo"]
+
+        expected = JSON.parse(routes_json)
+        
+        expect(actual).to eq(expected[0])
+        expect(actualVersion).to eq(route_version)
     end
   end
 

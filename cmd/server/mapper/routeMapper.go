@@ -1,10 +1,13 @@
 package mapper
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
+	"runtime/debug"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
@@ -12,58 +15,61 @@ import (
 
 type RouteMapper struct{}
 
-func testRoute() (*v2.RouteConfiguration, error) {
-	vhosts := make([]route.VirtualHost, 1)
-	vhosts[0] = route.VirtualHost{
-		Name:    "local_service",
-		Domains: []string{"*"},
-		Routes: []route.Route{
-			{
-				Match: route.RouteMatch{
-					PathSpecifier: &route.RouteMatch_Prefix{
-						Prefix: "/",
-					},
-				},
-				Action: &route.Route_Route{
-					Route: &route.RouteAction{
-						ClusterSpecifier: &route.RouteAction_Cluster{
-							Cluster: "bifrost",
-						},
-					},
-				},
-			},
-		},
+func (r *RouteMapper) GetRoute(rawObj interface{}) (retRoutes *v2.RouteConfiguration, retErr error) {
+	if rawObj == nil {
+		return &v2.RouteConfiguration{}, nil
 	}
-	route := v2.RouteConfiguration{
-		Name:         "local_route",
-		VirtualHosts: vhosts,
-	}
-	return &route, nil
+	connManager := BuildRouteConfig(rawObj)
+	return connManager.RouteConfig, nil
 }
 
-// func (r *RouteMapper) GetRoute(configJson string) (*v2.RouteConfiguration, error) {
+func (r *RouteMapper) GetRoutes(routesJson string) (retRoutes []*v2.RouteConfiguration, retErr error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("*********************************")
+			log.Printf("Recovered %s from %s: %s\n", "GetRoutes", r, debug.Stack())
+			log.Println("*********************************")
+			retErr = errors.New(fmt.Sprintf("%s", r))
+		}
+	}()
+	var rawArr []interface{}
+	err := json.Unmarshal([]byte(routesJson), &rawArr)
+	if err != nil {
+		panic(err)
+	}
 
-// }
+	var routes = make([]*v2.RouteConfiguration, len(rawArr))
+	for i, rawRoute := range rawArr {
+		val, err := r.GetRoute(rawRoute)
+		if err != nil {
+			panic(err)
+		}
+		routes[i] = val
+	}
+	return routes, nil
+}
 
 func (r *RouteMapper) GetResources(configJson string) ([]types.Any, error) {
 	typeUrl := cache.RouteType
-	resources := make([]types.Any, 1)
 
-	protoVal, err := testRoute()
-	// protoVal, err := r.GetRoute(configJson)
+	routes, err := r.GetRoutes(configJson)
 	if err != nil {
-		log.Printf("Error parsing listener config")
+		log.Printf("Error parsing route config")
 		return nil, err
 	}
-	data, err := proto.Marshal(protoVal)
-	if err != nil {
-		log.Printf("Error building cluster resource...\n")
-		return nil, err
-	}
+	resources := make([]types.Any, len(routes))
 
-	resources[0] = types.Any{
-		Value:   data,
-		TypeUrl: typeUrl,
+	for i, route := range routes {
+		data, err := proto.Marshal(route)
+		if err != nil {
+			log.Printf("Error marshalling route config")
+			log.Panic(err)
+		}
+
+		resources[i] = types.Any{
+			Value:   data,
+			TypeUrl: typeUrl,
+		}
 	}
 
 	return resources, nil
