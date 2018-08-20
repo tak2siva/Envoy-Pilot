@@ -10,10 +10,12 @@ import (
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 )
 
+//IncrementalAggregatedResources - Not implemented
 func (s *Server) IncrementalAggregatedResources(_ discovery.AggregatedDiscoveryService_IncrementalAggregatedResourcesServer) error {
 	panic("Not implemented")
 }
 
+// StreamAggregatedResources - ADS server impl
 func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryService_StreamAggregatedResourcesServer) error {
 	log.Printf("-------------- Starting a ADS stream ------------------\n")
 
@@ -37,18 +39,18 @@ func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryS
 			subscriber = &model.EnvoySubscriber{
 				Cluster:            req.Node.Cluster,
 				Node:               req.Node.Id,
-				SubscribedTo:       constant.SUBSCRIBE_CDS,
+				SubscribedTo:       constant.SUBSCRIBE_ADS,
 				LastUpdatedVersion: getReqVersion(req.VersionInfo),
 			}
 			serverCtx = context.WithValue(serverCtx, envoySubscriberKey, subscriber)
-			clusterService.RegisterEnvoy(serverCtx, stream, subscriber, dispatchChannel)
+			defaultPushService.RegisterEnvoy(serverCtx, stream, subscriber, dispatchChannel)
 			i++
 		}
 
 		log.Printf("Received Request from %s\n %+v\n", subscriber.BuildInstanceKey(), req)
 
 		if xdsConfigDao.IsACK(subscriber, req.ResponseNonce) {
-			clusterService.HandleACK(subscriber, req)
+			defaultPushService.HandleACK(subscriber, req)
 			continue
 		} else {
 			log.Printf("Response nonce not recognized %s", req.ResponseNonce)

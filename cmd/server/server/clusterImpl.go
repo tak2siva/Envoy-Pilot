@@ -45,14 +45,14 @@ func (s *Server) StreamClusters(stream v2.ClusterDiscoveryService_StreamClusters
 				LastUpdatedVersion: getReqVersion(req.VersionInfo),
 			}
 			serverCtx = context.WithValue(serverCtx, envoySubscriberKey, subscriber)
-			clusterService.RegisterEnvoy(serverCtx, stream, subscriber, dispatchChannel)
+			defaultPushService.RegisterEnvoy(serverCtx, stream, subscriber, dispatchChannel)
 			i++
 		}
 
 		log.Printf("Received Request from %s\n %+v\n", subscriber.BuildInstanceKey(), req)
 
 		if xdsConfigDao.IsACK(subscriber, req.ResponseNonce) {
-			clusterService.HandleACK(subscriber, req)
+			defaultPushService.HandleACK(subscriber, req)
 			continue
 		} else {
 			log.Printf("Response nonce not recognized %s", req.ResponseNonce)

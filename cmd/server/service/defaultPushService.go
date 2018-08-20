@@ -16,24 +16,34 @@ import (
 	"github.com/google/uuid"
 )
 
-var singletonClusterService *ClusterService
+var singletonDefaultPushService *DefaultPushService
 
-const envoySubscriberKey = "envoySubscriber"
-
-// ClusterService  a service class for cluster specific functionalities
-type ClusterService struct {
+// DefaultPushService  a service class for cluster specific functionalities
+type DefaultPushService struct {
 	xdsConfigDao   *storage.XdsConfigDao
 	clusterMapper  mapper.ClusterMapper
 	listenerMapper mapper.ListenerMapper
 }
 
+// GetDefaultPushService get a singleton instance
+func GetDefaultPushService() *DefaultPushService {
+	if singletonDefaultPushService == nil {
+		singletonDefaultPushService = &DefaultPushService{
+			xdsConfigDao:  storage.GetXdsConfigDao(),
+			clusterMapper: mapper.ClusterMapper{},
+		}
+	}
+	return singletonDefaultPushService
+}
+
 // IsOutdated check if the last dispatched config is outdated
-func (c *ClusterService) IsOutdated(en *model.EnvoySubscriber) bool {
+func (c *DefaultPushService) IsOutdated(en *model.EnvoySubscriber) bool {
 	log.Printf("latestVersion: %s --- actualVersion: %s", c.xdsConfigDao.GetLatestVersion(en), en.LastUpdatedVersion)
 	return c.xdsConfigDao.GetLatestVersion(en) != en.LastUpdatedVersion
 }
 
-func (c *ClusterService) RegisterEnvoy(ctx context.Context,
+// RegisterEnvoy register & subscribe new envoy instance
+func (c *DefaultPushService) RegisterEnvoy(ctx context.Context,
 	stream xDSStreamServer,
 	subscriber *model.EnvoySubscriber, dispatchChannel chan bool) {
 	c.xdsConfigDao.RegisterSubscriber(subscriber)
@@ -41,7 +51,7 @@ func (c *ClusterService) RegisterEnvoy(ctx context.Context,
 	go c.dispatchCluster(ctx, stream, dispatchChannel)
 }
 
-func (c *ClusterService) consulPoll(ctx context.Context, dispatchChannel chan bool) {
+func (c *DefaultPushService) consulPoll(ctx context.Context, dispatchChannel chan bool) {
 	for {
 		time.Sleep(10 * time.Second)
 		select {
@@ -49,7 +59,7 @@ func (c *ClusterService) consulPoll(ctx context.Context, dispatchChannel chan bo
 			return
 		default:
 		}
-		subscriber := ctx.Value(envoySubscriberKey).(*model.EnvoySubscriber)
+		subscriber := ctx.Value(constant.ENVOY_SUBSCRIBER_KEY).(*model.EnvoySubscriber)
 		log.Printf("Checking consul for %s..\n", subscriber.BuildInstanceKey())
 		if !c.xdsConfigDao.IsRepoPresent(subscriber) {
 			log.Printf("No repo found for subscriber %s\n", subscriber.BuildInstanceKey())
@@ -66,7 +76,7 @@ type Mapper interface {
 	GetResources(configJson string) ([]types.Any, error)
 }
 
-func (c *ClusterService) getMapperFor(topic string) Mapper {
+func (c *DefaultPushService) getMapperFor(topic string) Mapper {
 	switch topic {
 	case constant.SUBSCRIBE_CDS:
 		return &mapper.ClusterMapper{}
@@ -79,7 +89,7 @@ func (c *ClusterService) getMapperFor(topic string) Mapper {
 	}
 }
 
-func (c *ClusterService) getTypeUrlFor(topic string) string {
+func (c *DefaultPushService) getTypeUrlFor(topic string) string {
 	switch topic {
 	case constant.SUBSCRIBE_CDS:
 		return cache.ClusterType
@@ -92,7 +102,7 @@ func (c *ClusterService) getTypeUrlFor(topic string) string {
 	}
 }
 
-func (c *ClusterService) buildDiscoveryResponseFor(subscriber *model.EnvoySubscriber) (*v2.DiscoveryResponse, error) {
+func (c *DefaultPushService) buildDiscoveryResponseFor(subscriber *model.EnvoySubscriber) (*v2.DiscoveryResponse, error) {
 	mapper := c.getMapperFor(subscriber.SubscribedTo)
 	configJson, version := c.xdsConfigDao.GetConfigJson(subscriber)
 	clusterObj, err := mapper.GetResources(configJson)
@@ -117,7 +127,7 @@ type xDSStreamServer interface {
 	Send(*v2.DiscoveryResponse) error
 }
 
-func (c *ClusterService) dispatchCluster(ctx context.Context, stream xDSStreamServer,
+func (c *DefaultPushService) dispatchCluster(ctx context.Context, stream xDSStreamServer,
 	dispatchChannel chan bool) {
 	for range dispatchChannel {
 		select {
@@ -126,7 +136,7 @@ func (c *ClusterService) dispatchCluster(ctx context.Context, stream xDSStreamSe
 		default:
 		}
 
-		subscriber := ctx.Value(envoySubscriberKey).(*model.EnvoySubscriber)
+		subscriber := ctx.Value(constant.ENVOY_SUBSCRIBER_KEY).(*model.EnvoySubscriber)
 		response, err := c.buildDiscoveryResponseFor(subscriber)
 		if err != nil {
 			log.Panicf("Unable to dispatch for %s\n", subscriber.BuildInstanceKey())
@@ -148,20 +158,12 @@ func (c *ClusterService) dispatchCluster(ctx context.Context, stream xDSStreamSe
 	}
 }
 
-func (c *ClusterService) HandleACK(subscriber *model.EnvoySubscriber, req *v2.DiscoveryRequest) {
+// HandleACK check if the response is an ACK
+// if yes ignore
+// if not push new config
+func (c *DefaultPushService) HandleACK(subscriber *model.EnvoySubscriber, req *v2.DiscoveryRequest) {
 	log.Printf("Received ACK %s from %s", req.ResponseNonce, subscriber.BuildInstanceKey())
 	c.xdsConfigDao.RemoveNonce(subscriber, req.ResponseNonce)
 	subscriber.LastUpdatedVersion = req.VersionInfo
 	c.xdsConfigDao.UpdateEnvoySubscriber(subscriber)
-}
-
-// GetClusterService get a singleton instance
-func GetClusterService() *ClusterService {
-	if singletonClusterService == nil {
-		singletonClusterService = &ClusterService{
-			xdsConfigDao:  storage.GetXdsConfigDao(),
-			clusterMapper: mapper.ClusterMapper{},
-		}
-	}
-	return singletonClusterService
 }

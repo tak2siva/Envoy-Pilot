@@ -8,11 +8,11 @@ import (
 
 const envoySubscriberKey = "envoySubscriber"
 
-var clusterService *service.ClusterService
+var defaultPushService *service.DefaultPushService
 var xdsConfigDao *storage.XdsConfigDao
 
 func init() {
-	clusterService = service.GetClusterService()
+	defaultPushService = service.GetDefaultPushService()
 	xdsConfigDao = storage.GetXdsConfigDao()
 }
 
@@ -23,4 +23,5 @@ func getReqVersion(version string) string {
 	return ""
 }
 
+// Server struct will impl CDS, LDS, RDS & ADS
 type Server struct{}
