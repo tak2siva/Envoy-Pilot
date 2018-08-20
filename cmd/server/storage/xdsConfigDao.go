@@ -25,7 +25,6 @@ func (dao *XdsConfigDao) RegisterSubscriber(sub *model.EnvoySubscriber) {
 
 func (dao *XdsConfigDao) IsRepoPresent(sub *model.EnvoySubscriber) bool {
 	if dao.consulWrapper.Get(sub.BuildRootKey()+"version") == nil || dao.consulWrapper.Get(sub.BuildRootKey()+"config") == nil {
-		log.Printf("No repo found for %s instance %d\n", sub.BuildRootKey(), sub.Id)
 		return false
 	}
 	return true

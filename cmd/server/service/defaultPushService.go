@@ -6,12 +6,10 @@ import (
 	"Envoy-xDS/cmd/server/model"
 	"Envoy-xDS/cmd/server/storage"
 	"context"
-	"fmt"
 	"log"
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/google/uuid"
 )
 
@@ -19,17 +17,19 @@ var singletonDefaultPushService *DefaultPushService
 
 // DefaultPushService  a service class for cluster specific functionalities
 type DefaultPushService struct {
-	xdsConfigDao   *storage.XdsConfigDao
-	clusterMapper  mapper.ClusterMapper
-	listenerMapper mapper.ListenerMapper
+	xdsConfigDao    *storage.XdsConfigDao
+	clusterMapper   mapper.ClusterMapper
+	listenerMapper  mapper.ListenerMapper
+	v2HelperService *V2HelperService
 }
 
 // GetDefaultPushService get a singleton instance
 func GetDefaultPushService() *DefaultPushService {
 	if singletonDefaultPushService == nil {
 		singletonDefaultPushService = &DefaultPushService{
-			xdsConfigDao:  storage.GetXdsConfigDao(),
-			clusterMapper: mapper.ClusterMapper{},
+			xdsConfigDao:    storage.GetXdsConfigDao(),
+			clusterMapper:   mapper.ClusterMapper{},
+			v2HelperService: &V2HelperService{},
 		}
 	}
 	return singletonDefaultPushService
@@ -37,7 +37,6 @@ func GetDefaultPushService() *DefaultPushService {
 
 // IsOutdated check if the last dispatched config is outdated
 func (c *DefaultPushService) IsOutdated(en *model.EnvoySubscriber) bool {
-	log.Printf("latestVersion: %s --- actualVersion: %s", c.xdsConfigDao.GetLatestVersion(en), en.LastUpdatedVersion)
 	return c.xdsConfigDao.GetLatestVersion(en) != en.LastUpdatedVersion
 }
 
@@ -45,12 +44,28 @@ func (c *DefaultPushService) IsOutdated(en *model.EnvoySubscriber) bool {
 func (c *DefaultPushService) RegisterEnvoy(ctx context.Context,
 	stream XDSStreamServer,
 	subscriber *model.EnvoySubscriber, dispatchChannel chan string) {
-	c.xdsConfigDao.RegisterSubscriber(subscriber)
-	go c.consulPoll(ctx, dispatchChannel)
-	go c.dispatchCluster(ctx, stream, dispatchChannel)
+	if subscriber.IsADS() {
+		if subscriber.Id == 0 {
+			c.xdsConfigDao.RegisterSubscriber(subscriber)
+			go c.consulPollADS(ctx, dispatchChannel)
+			go c.dispatchData(ctx, stream, dispatchChannel)
+		}
+		for _, s := range subscriber.AdsList {
+			if s.Id == 0 {
+				c.xdsConfigDao.RegisterSubscriber(s)
+			}
+		}
+	} else {
+		if subscriber.Id == 0 {
+			c.xdsConfigDao.RegisterSubscriber(subscriber)
+			go c.consulPoll(ctx, dispatchChannel)
+			go c.dispatchData(ctx, stream, dispatchChannel)
+		}
+	}
 }
 
 func (c *DefaultPushService) consulPoll(ctx context.Context, dispatchChannel chan string) {
+	i := 0
 	for {
 		time.Sleep(10 * time.Second)
 		select {
@@ -59,11 +74,19 @@ func (c *DefaultPushService) consulPoll(ctx context.Context, dispatchChannel cha
 		default:
 		}
 		subscriber := ctx.Value(constant.ENVOY_SUBSCRIBER_KEY).(*model.EnvoySubscriber)
-		log.Printf("Checking consul for %s..\n", subscriber.BuildInstanceKey())
 		if !c.xdsConfigDao.IsRepoPresent(subscriber) {
-			log.Printf("No repo found for subscriber %s\n", subscriber.BuildInstanceKey())
+			if i == 0 {
+				log.Printf("No repo found for subscriber %s\n", subscriber.BuildInstanceKey())
+				i++
+			}
 			continue
 		}
+
+		if i == 0 {
+			log.Printf("[%s] latestVersion: %s --- actualVersion: %s\n", subscriber.BuildInstanceKey(), c.xdsConfigDao.GetLatestVersion(subscriber), subscriber.LastUpdatedVersion)
+			i++
+		}
+
 		if c.IsOutdated(subscriber) {
 			log.Printf("Found update dispatching for %s\n", subscriber.BuildInstanceKey())
 			dispatchChannel <- ""
@@ -71,16 +94,41 @@ func (c *DefaultPushService) consulPoll(ctx context.Context, dispatchChannel cha
 	}
 }
 
-func (c *DefaultPushService) getTypeUrlFor(topic string) string {
-	switch topic {
-	case constant.SUBSCRIBE_CDS:
-		return cache.ClusterType
-	case constant.SUBSCRIBE_LDS:
-		return cache.ListenerType
-	case constant.SUBSCRIBE_RDS:
-		return cache.RouteType
-	default:
-		panic(fmt.Sprintf("No TypeUrl found for type %s\n", topic))
+func (c *DefaultPushService) consulPollADS(ctx context.Context, dispatchChannel chan string) {
+	i := 0
+	for {
+		time.Sleep(10 * time.Second)
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+		subscribers := ctx.Value(constant.ENVOY_SUBSCRIBER_KEY).(*model.EnvoySubscriber)
+		for _, topic := range constant.SUPPORTED_TYPES {
+			subscriber := subscribers.AdsList[topic]
+			if subscriber == nil {
+				continue
+			}
+			if !c.xdsConfigDao.IsRepoPresent(subscriber) {
+				if i == 0 {
+					log.Printf("No repo found for subscriber %s\n", subscriber.BuildInstanceKey())
+				}
+				continue
+			}
+
+			if i == 0 {
+				log.Printf("[%s] latestVersion: %s --- actualVersion: %s\n", subscriber.BuildInstanceKey(), c.xdsConfigDao.GetLatestVersion(subscriber), subscriber.LastUpdatedVersion)
+			}
+
+			if c.IsOutdated(subscriber) {
+				log.Printf("Found update dispatching for %s\n", subscriber.BuildInstanceKey())
+				dispatchChannel <- topic
+			}
+		}
+
+		if i == 0 {
+			i++
+		}
 	}
 }
 
@@ -99,7 +147,7 @@ func (c *DefaultPushService) buildDiscoveryResponseFor(subscriber *model.EnvoySu
 	response := &v2.DiscoveryResponse{
 		VersionInfo: version,
 		Resources:   clusterObj,
-		TypeUrl:     c.getTypeUrlFor(subscriber.SubscribedTo),
+		TypeUrl:     c.v2HelperService.GetTypeUrlFor(subscriber.SubscribedTo),
 		Nonce:       responseUUID,
 	}
 	return response, nil
@@ -111,9 +159,9 @@ type XDSStreamServer interface {
 	Recv() (*v2.DiscoveryRequest, error)
 }
 
-func (c *DefaultPushService) dispatchCluster(ctx context.Context, stream XDSStreamServer,
+func (c *DefaultPushService) dispatchData(ctx context.Context, stream XDSStreamServer,
 	dispatchChannel chan string) {
-	for range dispatchChannel {
+	for topic := range dispatchChannel {
 		select {
 		case <-ctx.Done():
 			return
@@ -121,6 +169,10 @@ func (c *DefaultPushService) dispatchCluster(ctx context.Context, stream XDSStre
 		}
 
 		subscriber := ctx.Value(constant.ENVOY_SUBSCRIBER_KEY).(*model.EnvoySubscriber)
+		// var currentSubscriber *model.EnvoySubscriber
+		if subscriber.IsADS() {
+			subscriber = subscriber.GetAdsSubscriber(topic)
+		}
 		response, err := c.buildDiscoveryResponseFor(subscriber)
 		if err != nil {
 			log.Panicf("Unable to dispatch for %s\n", subscriber.BuildInstanceKey())
@@ -143,8 +195,8 @@ func (c *DefaultPushService) dispatchCluster(ctx context.Context, stream XDSStre
 }
 
 // HandleACK check if the response is an ACK
-// if yes ignore
-// if not push new config
+// if not ignore
+// if yes update the last updated version
 func (c *DefaultPushService) HandleACK(subscriber *model.EnvoySubscriber, req *v2.DiscoveryRequest) {
 	log.Printf("Received ACK %s from %s", req.ResponseNonce, subscriber.BuildInstanceKey())
 	c.xdsConfigDao.RemoveNonce(subscriber, req.ResponseNonce)

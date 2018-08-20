@@ -87,7 +87,6 @@ func (c *ConsulWrapper) checkAndSetUniqId() (bool, int, error) {
 }
 
 func (c *ConsulWrapper) Set(key string, value string) {
-	log.Println(c.client)
 	p := &consul.KVPair{Key: key, Value: []byte(value)}
 	_, err := c.client.KV().Put(p, nil)
 	if err != nil {

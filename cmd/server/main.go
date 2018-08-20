@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 
+	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	consul "github.com/hashicorp/consul/api"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -40,7 +41,7 @@ func main() {
 	v2.RegisterClusterDiscoveryServiceServer(s, &server.Server{})
 	v2.RegisterListenerDiscoveryServiceServer(s, &server.Server{})
 	v2.RegisterRouteDiscoveryServiceServer(s, &server.Server{})
-	// discovery.RegisterAggregatedDiscoveryServiceServer(s, &server.Server{})
+	discovery.RegisterAggregatedDiscoveryServiceServer(s, &server.Server{})
 
 	reflection.Register(s)
 

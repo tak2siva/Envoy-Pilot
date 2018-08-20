@@ -13,6 +13,7 @@ const envoySubscriberKey = "envoySubscriber"
 
 var defaultPushService *service.DefaultPushService
 var xdsConfigDao *storage.XdsConfigDao
+var v2Helper *service.V2HelperService
 
 func init() {
 	defaultPushService = service.GetDefaultPushService()
@@ -31,7 +32,7 @@ type Server struct{}
 
 // BiDiStreamFor common bi-directional stream impl for cds,lds,rds
 func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) error {
-	log.Printf("-------------- Starting a %s stream ------------------\n", xdsType)
+	log.Printf("[%s] -------------- Starting a %s stream ------------------\n", xdsType, xdsType)
 
 	serverCtx, cancel := context.WithCancel(context.Background())
 	dispatchChannel := make(chan string)
@@ -41,7 +42,7 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 	for {
 		req, err := stream.Recv()
 		if err != nil {
-			log.Printf("Disconnecting client %s\n", subscriber.BuildInstanceKey())
+			log.Printf("[%s] Disconnecting client %s\n", xdsType, subscriber.BuildInstanceKey())
 			log.Println(err)
 			cancel()
 			return err
@@ -58,13 +59,13 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 			i++
 		}
 
-		log.Printf("Received Request from %s\n %+v\n", subscriber.BuildInstanceKey(), req)
+		log.Printf("[%s] Received Request from %s\n %+v\n", xdsType, subscriber.BuildInstanceKey(), req)
 
 		if xdsConfigDao.IsACK(subscriber, req.ResponseNonce) {
 			defaultPushService.HandleACK(subscriber, req)
 			continue
 		} else {
-			log.Printf("Response nonce not recognized %s", req.ResponseNonce)
+			log.Printf("[%s] Response nonce not recognized %s", xdsType, req.ResponseNonce)
 		}
 	}
 }

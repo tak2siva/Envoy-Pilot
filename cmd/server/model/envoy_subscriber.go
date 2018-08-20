@@ -1,6 +1,7 @@
 package model
 
 import (
+	"Envoy-xDS/cmd/server/constant"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -8,14 +9,17 @@ import (
 )
 
 type EnvoySubscriber struct {
-	Id                   int
-	Cluster              string
-	Node                 string
-	UpdateSuccess        int
-	UpdateFailures       int
-	LastUpdatedVersion   string
+	Id                 int
+	Cluster            string
+	Node               string
+	UpdateSuccess      int
+	UpdateFailures     int
+	LastUpdatedVersion string
+	// LastUpdatedVersionV2 map[string]string // for ads
 	LastUpdatedTimestamp time.Time
 	SubscribedTo         string
+	// SubscribedToV2       []string // for ads
+	AdsList map[string]*EnvoySubscriber
 }
 
 func (e *EnvoySubscriber) ToJSON() string {
@@ -37,4 +41,12 @@ func (e *EnvoySubscriber) BuildRootKey() string {
 
 func (e *EnvoySubscriber) IsEqual(that *EnvoySubscriber) bool {
 	return e.Cluster == that.Cluster && e.Node == that.Node && e.UpdateSuccess == that.UpdateSuccess && e.UpdateFailures == that.UpdateFailures && e.LastUpdatedVersion == that.LastUpdatedVersion
+}
+
+func (e *EnvoySubscriber) IsADS() bool {
+	return e.SubscribedTo == constant.SUBSCRIBE_ADS
+}
+
+func (e *EnvoySubscriber) GetAdsSubscriber(topic string) *EnvoySubscriber {
+	return e.AdsList[topic]
 }
