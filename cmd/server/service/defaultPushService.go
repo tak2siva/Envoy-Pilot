@@ -12,7 +12,6 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
-	"github.com/gogo/protobuf/types"
 	"github.com/google/uuid"
 )
 
@@ -44,14 +43,14 @@ func (c *DefaultPushService) IsOutdated(en *model.EnvoySubscriber) bool {
 
 // RegisterEnvoy register & subscribe new envoy instance
 func (c *DefaultPushService) RegisterEnvoy(ctx context.Context,
-	stream xDSStreamServer,
-	subscriber *model.EnvoySubscriber, dispatchChannel chan bool) {
+	stream XDSStreamServer,
+	subscriber *model.EnvoySubscriber, dispatchChannel chan string) {
 	c.xdsConfigDao.RegisterSubscriber(subscriber)
 	go c.consulPoll(ctx, dispatchChannel)
 	go c.dispatchCluster(ctx, stream, dispatchChannel)
 }
 
-func (c *DefaultPushService) consulPoll(ctx context.Context, dispatchChannel chan bool) {
+func (c *DefaultPushService) consulPoll(ctx context.Context, dispatchChannel chan string) {
 	for {
 		time.Sleep(10 * time.Second)
 		select {
@@ -67,25 +66,8 @@ func (c *DefaultPushService) consulPoll(ctx context.Context, dispatchChannel cha
 		}
 		if c.IsOutdated(subscriber) {
 			log.Printf("Found update dispatching for %s\n", subscriber.BuildInstanceKey())
-			dispatchChannel <- true
+			dispatchChannel <- ""
 		}
-	}
-}
-
-type Mapper interface {
-	GetResources(configJson string) ([]types.Any, error)
-}
-
-func (c *DefaultPushService) getMapperFor(topic string) Mapper {
-	switch topic {
-	case constant.SUBSCRIBE_CDS:
-		return &mapper.ClusterMapper{}
-	case constant.SUBSCRIBE_LDS:
-		return &mapper.ListenerMapper{}
-	case constant.SUBSCRIBE_RDS:
-		return &mapper.RouteMapper{}
-	default:
-		panic(fmt.Sprintf("No mapper found for type %s\n", topic))
 	}
 }
 
@@ -103,7 +85,7 @@ func (c *DefaultPushService) getTypeUrlFor(topic string) string {
 }
 
 func (c *DefaultPushService) buildDiscoveryResponseFor(subscriber *model.EnvoySubscriber) (*v2.DiscoveryResponse, error) {
-	mapper := c.getMapperFor(subscriber.SubscribedTo)
+	mapper := mapper.GetMapperFor(subscriber.SubscribedTo)
 	configJson, version := c.xdsConfigDao.GetConfigJson(subscriber)
 	clusterObj, err := mapper.GetResources(configJson)
 
@@ -123,12 +105,14 @@ func (c *DefaultPushService) buildDiscoveryResponseFor(subscriber *model.EnvoySu
 	return response, nil
 }
 
-type xDSStreamServer interface {
+// XDSStreamServer common data type for xDS stream
+type XDSStreamServer interface {
 	Send(*v2.DiscoveryResponse) error
+	Recv() (*v2.DiscoveryRequest, error)
 }
 
-func (c *DefaultPushService) dispatchCluster(ctx context.Context, stream xDSStreamServer,
-	dispatchChannel chan bool) {
+func (c *DefaultPushService) dispatchCluster(ctx context.Context, stream XDSStreamServer,
+	dispatchChannel chan string) {
 	for range dispatchChannel {
 		select {
 		case <-ctx.Done():

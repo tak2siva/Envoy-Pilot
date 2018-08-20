@@ -199,7 +199,7 @@ describe "xDS" do
         cset("#{ROUTE_KEY}/config", routes_json)
         cset("#{ROUTE_KEY}/version", route_version)
 
-        sleep 20
+        sleep 35
     end
 
     it "Add a cluster" do
