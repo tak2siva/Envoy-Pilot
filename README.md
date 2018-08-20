@@ -1,4 +1,3 @@
-### Envoy xDS with Consul
+# Envoy-Pilot
 
-TODO 
-1. Group pub/sub by cluster/node
+Envoy Pilot or Envoy xDS is a control plane implementation for Envoy written in Golang and uses Consul for persistence.
