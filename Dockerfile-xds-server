@@ -1,4 +1,4 @@
-FROM tak2siva/xds-build:latest
+FROM tak2siva/xds-build:v0.1.1
 
 ADD cmd /go/src/Envoy-xDS/cmd
 ADD lib /go/src/Envoy-xDS/lib
