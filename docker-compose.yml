@@ -18,6 +18,7 @@ services:
     ports: 
       - "2345:2345"
       - "9090:9090"
+      - "7777:7777"
     networks:
       - consul_xds-demo
 
