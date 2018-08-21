@@ -1,8 +1,8 @@
 package dump
 
 import (
-	"Envoy-xDS/cmd/server/mapper"
-	"Envoy-xDS/cmd/server/storage"
+	"Envoy-Pilot/cmd/server/mapper"
+	"Envoy-Pilot/cmd/server/storage"
 	"encoding/json"
 	"fmt"
 	"log"

@@ -10,7 +10,7 @@
             "type": "go",
             "request": "launch",
             "mode": "remote",
-            "remotePath": "/go/src/Envoy-xDS/cmd/server/",
+            "remotePath": "/go/src/Envoy-Pilot/cmd/server/",
             "port": 2345,
             "host": "127.0.0.1",
             "program": "${workspaceRoot}/cmd/server/",

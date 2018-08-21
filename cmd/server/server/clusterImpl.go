@@ -1,7 +1,7 @@
 package server
 
 import (
-	"Envoy-xDS/cmd/server/constant"
+	"Envoy-Pilot/cmd/server/constant"
 	"context"
 
 	"errors"

@@ -1,7 +1,7 @@
 package mapper
 
 import (
-	"Envoy-xDS/cmd/server/constant"
+	"Envoy-Pilot/cmd/server/constant"
 	"fmt"
 
 	"github.com/gogo/protobuf/types"

@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"Envoy-xDS/cmd/server/model"
+	"Envoy-Pilot/cmd/server/model"
 	"encoding/json"
 	"log"
 	"testing"

@@ -1,10 +1,11 @@
 FROM tak2siva/xds-build:v0.1.1
 
-ADD cmd /go/src/Envoy-xDS/cmd
-ADD lib /go/src/Envoy-xDS/lib
+RUN mkdir /go/src/Envoy-Pilot
+ADD cmd /go/src/Envoy-Pilot/cmd
+ADD lib /go/src/Envoy-Pilot/lib
 
 RUN rm -rf  /go/src/github.com/envoyproxy/go-control-plane/vendor
-RUN go build -o /go/bin/Envoy-xDS /go/src/Envoy-xDS/cmd/server/main.go
+RUN go build -o /go/bin/Envoy-Pilot /go/src/Envoy-Pilot/cmd/server/main.go
 
-WORKDIR /go/bin 
-CMD ["./Envoy-xDS"]
+WORKDIR /go/bin
+CMD ["./Envoy-Pilot"]

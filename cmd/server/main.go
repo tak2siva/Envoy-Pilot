@@ -1,9 +1,9 @@
 package main
 
 import (
-	"Envoy-xDS/cmd/server/dump"
-	"Envoy-xDS/cmd/server/server"
-	"Envoy-xDS/cmd/server/storage"
+	"Envoy-Pilot/cmd/server/dump"
+	"Envoy-Pilot/cmd/server/server"
+	"Envoy-Pilot/cmd/server/storage"
 	"fmt"
 	"log"
 	"net"

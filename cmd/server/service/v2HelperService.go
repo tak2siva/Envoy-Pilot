@@ -1,7 +1,7 @@
 package service
 
 import (
-	"Envoy-xDS/cmd/server/constant"
+	"Envoy-Pilot/cmd/server/constant"
 	"fmt"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache"

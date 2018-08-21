@@ -6,8 +6,8 @@ services:
       context: .
       dockerfile: Dockerfile-xds-server
     # command: "sh -c 'while true; do sleep 1000; done'"
-    # command: "sh -c 'dlv debug Envoy-xDS/cmd/server/ -l 0.0.0.0:2345 --headless=true --log=true -- server'"
-    # command: "sleep 2 && sh -c 'go run /go/src/Envoy-xDS/cmd/server/main.go'"
+    # command: "sh -c 'dlv debug Envoy-Pilot/cmd/server/ -l 0.0.0.0:2345 --headless=true --log=true -- server'"
+    # command: "sleep 2 && sh -c 'go run /go/src/Envoy-Pilot/cmd/server/main.go'"
     security_opt:
       - seccomp:unconfined
     volumes:

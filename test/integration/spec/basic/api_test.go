@@ -1,7 +1,7 @@
 package basic
 
 import (
-	"Envoy-xDS/cmd/server/constant"
+	"Envoy-Pilot/cmd/server/constant"
 	"fmt"
 	"log"
 	"net/http"

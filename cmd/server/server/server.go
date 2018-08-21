@@ -1,9 +1,9 @@
 package server
 
 import (
-	"Envoy-xDS/cmd/server/model"
-	"Envoy-xDS/cmd/server/service"
-	"Envoy-xDS/cmd/server/storage"
+	"Envoy-Pilot/cmd/server/model"
+	"Envoy-Pilot/cmd/server/service"
+	"Envoy-Pilot/cmd/server/storage"
 	"context"
 	"log"
 	"strings"

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"Envoy-xDS/cmd/server/constant"
-	"Envoy-xDS/cmd/server/storage"
+	"Envoy-Pilot/cmd/server/constant"
+	"Envoy-Pilot/cmd/server/storage"
 	"fmt"
 	"io/ioutil"
 	"log"

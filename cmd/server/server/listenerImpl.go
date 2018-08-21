@@ -1,7 +1,7 @@
 package server
 
 import (
-	"Envoy-xDS/cmd/server/constant"
+	"Envoy-Pilot/cmd/server/constant"
 	"context"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"

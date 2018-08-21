@@ -1,7 +1,7 @@
 package model
 
 import (
-	"Envoy-xDS/cmd/server/constant"
+	"Envoy-Pilot/cmd/server/constant"
 	"encoding/json"
 	"fmt"
 	"log"

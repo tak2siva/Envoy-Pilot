@@ -1,10 +1,10 @@
 package service
 
 import (
-	"Envoy-xDS/cmd/server/constant"
-	"Envoy-xDS/cmd/server/mapper"
-	"Envoy-xDS/cmd/server/model"
-	"Envoy-xDS/cmd/server/storage"
+	"Envoy-Pilot/cmd/server/constant"
+	"Envoy-Pilot/cmd/server/mapper"
+	"Envoy-Pilot/cmd/server/model"
+	"Envoy-Pilot/cmd/server/storage"
 	"context"
 	"log"
 	"time"

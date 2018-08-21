@@ -1,8 +1,8 @@
 package server
 
 import (
-	"Envoy-xDS/cmd/server/constant"
-	"Envoy-xDS/cmd/server/model"
+	"Envoy-Pilot/cmd/server/constant"
+	"Envoy-Pilot/cmd/server/model"
 	"context"
 	"log"
 
