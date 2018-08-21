@@ -51,3 +51,26 @@ For CDS add KV pairs
         }]
     }
   }]"`
+
+
+  ## Runnnig Docker
+  
+  Consul url need to be set in .env
+  
+  ```
+  docker run -v $(pwd)/env_values.txt:/.env -p 7777:7777 -p 9090:9090 tak2siva/envoy-pilot:latest
+  ```
+
+  ## Debugging
+
+  * xDS-Server is running on port 7777
+  * A http server is running on port 9090 for debugging
+
+  `localhost:9090/dump/KEY_TEMPLATE` will give a json dump of proto mapping
+
+   **Ex:** 
+   ```
+   http://localhost:9090/dump/cds/cluster/India/node/TN/cluster/config
+   ```
+
+
