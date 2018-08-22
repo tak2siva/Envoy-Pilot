@@ -11,12 +11,17 @@ import (
 )
 
 func SetUpHttpServer() {
+	http.HandleFunc("/ping", pingHandler)
 	http.HandleFunc("/dump/cds/", configDumpCDS)
 	http.HandleFunc("/dump/lds/", configDumpLDS)
 	err := http.ListenAndServe(":9090", nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
+}
+
+func pingHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "%s", "pong")
 }
 
 func configDumpCDS(w http.ResponseWriter, r *http.Request) {
