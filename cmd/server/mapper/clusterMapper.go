@@ -1,6 +1,7 @@
 package mapper
 
 import (
+	"Envoy-Pilot/cmd/server/util"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -78,6 +79,40 @@ func BuildDuration(str string) time.Duration {
 	return res
 }
 
+func buildHttp2ProtocolOptions(rawObj interface{}) *envoy_api_v2_core1.Http2ProtocolOptions {
+	if rawObj == nil {
+		return &envoy_api_v2_core1.Http2ProtocolOptions{}
+	}
+	objMap := toMap(rawObj)
+	http2 := envoy_api_v2_core1.Http2ProtocolOptions{}
+
+	if keyExists(objMap, "hpack_table_size") {
+		val, err := getUIntValue(objMap, "hpack_table_size")
+		util.CheckAndPanic(err)
+		http2.HpackTableSize = &val
+	}
+
+	if keyExists(objMap, "max_concurrent_streams") {
+		val, err := getUIntValue(objMap, "max_concurrent_streams")
+		util.CheckAndPanic(err)
+		http2.MaxConcurrentStreams = &val
+	}
+
+	if keyExists(objMap, "initial_stream_window_size") {
+		val, err := getUIntValue(objMap, "initial_stream_window_size")
+		util.CheckAndPanic(err)
+		http2.InitialStreamWindowSize = &val
+	}
+
+	if keyExists(objMap, "initial_connection_window_size") {
+		val, err := getUIntValue(objMap, "initial_connection_window_size")
+		util.CheckAndPanic(err)
+		http2.InitialConnectionWindowSize = &val
+	}
+
+	return &http2
+}
+
 func (c *ClusterMapper) GetCluster(rawObj interface{}) (retCluster v2.Cluster, retErr error) {
 	var rawObjMap map[string]interface{}
 	if rawObj != nil {
@@ -93,6 +128,7 @@ func (c *ClusterMapper) GetCluster(rawObj interface{}) (retCluster v2.Cluster, r
 	clusterObj.ConnectTimeout = cxTimeout
 	clusterObj.Type = buildDnsType(rawObjMap)
 	clusterObj.LbPolicy = buildLbPolicy(rawObjMap)
+	clusterObj.Http2ProtocolOptions = buildHttp2ProtocolOptions(rawObjMap["http2_protocol_options"])
 
 	hosts, err := buildHosts(rawObjMap)
 	if err != nil {

@@ -4,6 +4,8 @@ import (
 	"errors"
 	"log"
 	"strconv"
+
+	google_protobuf1 "github.com/gogo/protobuf/types"
 )
 
 func getInt(obj map[string]interface{}, key string) (int, error) {
@@ -32,6 +34,15 @@ func getUInt(obj map[string]interface{}, key string) (uint32, error) {
 	return uint32(val), err
 }
 
+func getUIntValue(obj map[string]interface{}, key string) (google_protobuf1.UInt32Value, error) {
+	val, err := getInt(obj, key)
+	if err != nil {
+		return google_protobuf1.UInt32Value{}, err
+	}
+	uVal := uint32(val)
+	return google_protobuf1.UInt32Value{Value: uVal}, err
+}
+
 func getString(obj map[string]interface{}, key string) string {
 	return obj[key].(string)
 }
@@ -55,4 +66,8 @@ func getFloat(obj map[string]interface{}, key string) float64 {
 
 func toMap(obj interface{}) map[string]interface{} {
 	return obj.(map[string]interface{})
+}
+
+func keyExists(objMap map[string]interface{}, key string) bool {
+	return objMap[key] != nil
 }

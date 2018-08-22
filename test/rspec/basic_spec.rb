@@ -131,6 +131,28 @@ cluster0_json = %Q{
         "connect_timeout": "0.250s",
         "type": "strict_dns",
         "lb_policy": "RANDOM",
+        "http2_protocol_options": {},
+        "hosts": [{
+          "socket_address": {
+           "address": "127.0.0.2",
+           "port_value": 1234
+          }
+        }]
+    }
+}
+
+cluster1_json = %Q{
+    {
+        "name": "app1-grpc",
+        "connect_timeout": "0.250s",
+        "type": "strict_dns",
+        "lb_policy": "RANDOM",
+        "http2_protocol_options": {
+            "hpack_table_size": 12,
+            "max_concurrent_streams": 14,
+            "initial_stream_window_size": 268435456,
+            "initial_connection_window_size": 268435456
+        },
         "hosts": [{
           "socket_address": {
            "address": "127.0.0.2",
@@ -142,7 +164,8 @@ cluster0_json = %Q{
 
 clusters_json = %Q{
     [
-        #{cluster0_json}
+        #{cluster0_json},
+        #{cluster1_json}
     ]
 }
 
@@ -213,6 +236,20 @@ describe "xDS" do
         expected[0]["type"] = expected[0]["type"].upcase
 
         expect(actual).to eq(expected[0])
+        expect(actualVersion).to eq(cluster_version)
+    end
+
+    it "Add a cluster with http2 options" do
+        resp = RestClient.get 'http://localhost:9901/config_dump'
+        json = JSON.parse(resp)
+        actual = json["configs"]["clusters"]["dynamicActiveClusters"][1]["cluster"]
+        actual = actual.to_snake_keys
+        actualVersion = json["configs"]["clusters"]["dynamicActiveClusters"][1]["versionInfo"]
+        
+        expected = JSON.parse(clusters_json)
+        expected[1]["type"] = expected[1]["type"].upcase
+
+        expect(actual).to eq(expected[1])
         expect(actualVersion).to eq(cluster_version)
     end
 
