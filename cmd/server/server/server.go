@@ -5,8 +5,11 @@ import (
 	"Envoy-Pilot/cmd/server/service"
 	"Envoy-Pilot/cmd/server/storage"
 	"context"
+	"errors"
 	"log"
 	"strings"
+
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 )
 
 const envoySubscriberKey = "envoySubscriber"
@@ -48,6 +51,11 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 			return err
 		}
 		if i == 0 {
+			if !s.isValidSubscriber(req) {
+				log.Printf("[%s] Error: Invalid cluster or node id %+v\n", xdsType, req)
+				cancel()
+				return errors.New("Invalid cluster or node id")
+			}
 			subscriber = &model.EnvoySubscriber{
 				Cluster:            req.Node.Cluster,
 				Node:               req.Node.Id,
@@ -68,4 +76,8 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 			log.Printf("[%s] Response nonce not recognized %s", xdsType, req.ResponseNonce)
 		}
 	}
+}
+
+func (s *Server) isValidSubscriber(req *v2.DiscoveryRequest) bool {
+	return len(req.Node.Cluster) == 0 || len(req.Node.Id) == 0
 }
