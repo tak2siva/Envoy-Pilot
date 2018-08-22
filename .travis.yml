@@ -17,6 +17,7 @@ before_script:
   - gem install rspec
   - gem install rest-client
   - gem install diplomat
+  - gem install plissken
 
 script:
   - (cd test/rspec && rspec basic_spec.rb --order defined --format documentation)
