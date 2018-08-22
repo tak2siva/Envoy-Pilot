@@ -129,7 +129,7 @@ cluster0_json = %Q{
     {
         "name": "app1",
         "connect_timeout": "0.250s",
-        "type": "STRICT_DNS",
+        "type": "strict_dns",
         "lb_policy": "RANDOM",
         "hosts": [{
           "socket_address": {
@@ -210,7 +210,8 @@ describe "xDS" do
         actualVersion = json["configs"]["clusters"]["dynamicActiveClusters"][0]["versionInfo"]
         
         expected = JSON.parse(clusters_json)
-        
+        expected[0]["type"] = expected[0]["type"].upcase
+
         expect(actual).to eq(expected[0])
         expect(actualVersion).to eq(cluster_version)
     end
