@@ -55,6 +55,7 @@ Pushing new configuration
 
 From root directory 
 ```
+docker network create envoy-pilot_xds-demo
 docker-compose -f docker-compose.consul.yaml up
 docker-compose -f docker-compose.server.yaml up --build
 ```

@@ -9,6 +9,7 @@ rvm:
   - 2.5
 
 before_script:
+  - docker network create envoy-pilot_xds-demo
   - docker-compose -f docker-compose.consul.yaml up -d
   - sleep 30
   - docker-compose -f docker-compose.travis.yaml up --build -d

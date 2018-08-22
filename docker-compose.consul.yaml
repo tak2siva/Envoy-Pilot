@@ -30,6 +30,3 @@ services:
     command: "agent -server -bootstrap-expect 3 -ui -client 0.0.0.0"
     expose:
       - "8500"
-
-networks:
-  xds-demo:
