@@ -1,6 +1,5 @@
 require 'rest-client'
 require 'json'
-require 'plissken'
 require 'diplomat'
 
 Diplomat.configure do |config|

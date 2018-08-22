@@ -15,6 +15,8 @@ before_script:
   - docker-compose -f docker-compose.travis.yaml up --build -d
   - (cd test/integration/ && docker-compose up --build -d)
   - gem install rspec
+  - gem install rest-client
+  - gem install diplomat
 
 script:
   - (cd test/rspec && rspec basic_spec.rb --order defined --format documentation)
