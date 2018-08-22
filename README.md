@@ -1,6 +1,6 @@
 # Envoy-Pilot
 
-Envoy Pilot or Envoy xDS is a control plane implementation for Envoy written in Golang and uses Consul for persistence.
+Envoy Pilot or Envoy xDS is a control plane implementation for [Envoy](https://github.com/envoyproxy/envoy) written in Golang and uses Consul for persistence.
 
 Currently Supports
    * CDS
