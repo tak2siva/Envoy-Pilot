@@ -17,8 +17,8 @@ services:
       - "9090:9090"
       - "7777:7777"
     networks:
-      - consul_xds-demo
+      - envoy-pilot_xds-demo
 
 networks:
-  consul_xds-demo:
+  envoy-pilot_xds-demo:
     external: true
