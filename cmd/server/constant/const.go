@@ -9,4 +9,6 @@ const (
 
 const ENVOY_SUBSCRIBER_KEY = "envoySubscriber"
 
+// Not really constants
 var SUPPORTED_TYPES = []string{SUBSCRIBE_CDS, SUBSCRIBE_LDS, SUBSCRIBE_RDS}
+var ENV_PATH = "/.env"

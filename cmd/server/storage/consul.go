@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"Envoy-Pilot/cmd/server/constant"
 	"log"
 	"os"
 	"strconv"
@@ -26,7 +27,7 @@ func GetConsulWrapper() ConsulWrapper {
 	mux.Lock()
 	defer mux.Unlock()
 	if singletonConsulWrapper.client == nil {
-		err := godotenv.Load("/.env")
+		err := godotenv.Load(constant.ENV_PATH)
 		if err != nil {
 			log.Print(err)
 			log.Fatal("Error loading .env file")
