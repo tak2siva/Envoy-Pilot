@@ -12,13 +12,7 @@ Currently Supports
 
 Checkout [Envoy XDS PROTOCOL Overview](https://github.com/envoyproxy/data-plane-api/blob/master/XDS_PROTOCOL.md) for more detail
 
-## Running Docker Compose
-
-From root directory 
-```
-cd consul && docker-compose up
-docker-compose up
-```
+## Usage
 
 xDS Server will be exposed on port 7777
 
@@ -52,25 +46,42 @@ For CDS add KV pairs
     }
   }]"`
 
+Pushing new configuration
+  * Envoy-Pilot will be polling for version change every 10 seconds.  
+  * If there is a version mismatch for any of `cluster/India/node/TN/(cluster|listener|route)/version` then new config `cluster/India/node/TN/(cluster|listener|route)/config` will be pushed to subscriber envoy.
+  * If update succeed there will be an ACK log for the instance.
 
-  ## Runnnig Docker
-  
-  Consul url need to be set in .env
-  
+## Running Docker Compose
+
+From root directory 
+```
+cd consul && docker-compose up
+docker-compose up
+```
+
+
+## Runnnig Docker
+
+Consul url need to be set in .env
+
+```
+docker run -v $(pwd)/env_values.txt:/.env -p 7777:7777 -p 9090:9090 tak2siva/envoy-pilot:latest
+```
+
+## Helm Chart
+
+Install using the [Helm Chart for Envoy-Pilot](https://github.com/tak2siva/Envoy-Pilot-Helm).
+
+## Debugging
+
+* xDS-Server is running on port 7777
+* A http server is running on port 9090 for debugging
+
+`localhost:9090/dump/KEY_TEMPLATE` will give a json dump of proto mapping
+
+  **Ex:** 
   ```
-  docker run -v $(pwd)/env_values.txt:/.env -p 7777:7777 -p 9090:9090 tak2siva/envoy-pilot:latest
+  http://localhost:9090/dump/cds/cluster/India/node/TN/cluster/config
   ```
-
-  ## Debugging
-
-  * xDS-Server is running on port 7777
-  * A http server is running on port 9090 for debugging
-
-  `localhost:9090/dump/KEY_TEMPLATE` will give a json dump of proto mapping
-
-   **Ex:** 
-   ```
-   http://localhost:9090/dump/cds/cluster/India/node/TN/cluster/config
-   ```
 
 
