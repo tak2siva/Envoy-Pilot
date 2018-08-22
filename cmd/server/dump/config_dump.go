@@ -32,7 +32,7 @@ func configDumpCDS(w http.ResponseWriter, r *http.Request) {
 	cwrapper := storage.GetConsulWrapper()
 	jsonStr := cwrapper.GetString(keyPath)
 	fmt.Printf("json dump %s\n", jsonStr)
-	val, err := m.GetCluster(jsonStr)
+	val, err := m.GetClusters(jsonStr)
 
 	if err != nil {
 		fmt.Fprintf(w, "Error creating obj %s", err)

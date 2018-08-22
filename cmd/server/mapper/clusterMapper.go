@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -19,7 +20,9 @@ import (
 type ClusterMapper struct{}
 
 func buildDnsType(rawObj map[string]interface{}) v2.Cluster_DiscoveryType {
-	typeID := v2.Cluster_DiscoveryType_value[getString(rawObj, "type")]
+	typeStr := getString(rawObj, "type")
+	typeStr = strings.ToUpper(typeStr)
+	typeID := v2.Cluster_DiscoveryType_value[typeStr]
 	return v2.Cluster_DiscoveryType(typeID)
 }
 
