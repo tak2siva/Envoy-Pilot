@@ -1,0 +1,24 @@
+version: '3'
+
+services:
+  xds-server:
+    build:
+      context: .
+      dockerfile: Dockerfile-xds-server
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - $PWD/env_values.txt:/.env
+    expose:
+      - 7777
+      - 2345
+    ports: 
+      - "2345:2345"
+      - "9090:9090"
+      - "7777:7777"
+    networks:
+      - consul_xds-demo
+
+networks:
+  consul_xds-demo:
+    external: true

@@ -6,6 +6,7 @@ import (
 	"Envoy-Pilot/cmd/server/storage"
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"strings"
 
@@ -79,5 +80,7 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 }
 
 func (s *Server) isValidSubscriber(req *v2.DiscoveryRequest) bool {
-	return len(req.Node.Cluster) == 0 || len(req.Node.Id) == 0
+	fmt.Printf("Node: %s -- len: %d\n", req.Node.Id, len(req.Node.Id))
+	fmt.Printf("Cluster: %s -- len: %d\n", req.Node.Cluster, len(req.Node.Cluster))
+	return (len(req.Node.Cluster) > 0) || (len(req.Node.Id) > 0)
 }

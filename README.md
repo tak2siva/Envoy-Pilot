@@ -55,8 +55,8 @@ Pushing new configuration
 
 From root directory 
 ```
-cd consul && docker-compose up
-docker-compose up
+docker-compose -f docker-compose.consul.yaml up
+docker-compose -f docker-compose.server.yaml up --build
 ```
 
 

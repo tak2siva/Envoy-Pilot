@@ -6,7 +6,7 @@ services:
       context: dummy-app
       dockerfile: Dockerfile-dummy-app
     networks:
-      - consul_xds-demo
+      - envoy-pilot_xds-demo
     command: "sh -c 'while true; do sleep 1000; done'"
   envoy:
     image: envoyproxy/envoy:v1.7.0
@@ -18,8 +18,8 @@ services:
     ports:
       - "9901:9901"
     networks:
-      - consul_xds-demo
+      - envoy-pilot_xds-demo
 
 networks:
-  consul_xds-demo:
+  envoy-pilot_xds-demo:
     external: true

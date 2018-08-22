@@ -1,0 +1,24 @@
+sudo: required
+
+language: ruby
+
+services:
+  - docker
+
+ruby:
+  - 2.5
+
+before_script:
+  - docker-compose -f docker-compose.consul.yaml up -d
+  - sleep 30
+  - docker-compose -f docker-compose.travis.yaml up --build -d
+  - (cd test/integration/ && docker-compose up --build -d)
+  - gem install rspec
+
+script:
+  - (cd test/rspec && rspec basic_spec.rb --order defined --format documentation)
+
+after_script:
+  - docker-compose -f docker-compose.consul.yaml down
+  - docker-compose -f docker-compose.travis.yaml down
+  - (cd test/integration/ && docker-compose down)
