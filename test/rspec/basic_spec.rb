@@ -203,7 +203,38 @@ cluster_version = "1.0"
 listener_version = "1.0"
 route_version = "1.0"
 
+def getDynamicCluster port, idx
+    resp = RestClient.get "http://localhost:#{port}/config_dump"
+    json = JSON.parse(resp)
+    actual = json["configs"]["clusters"]["dynamicActiveClusters"][idx]["cluster"]
+    actual = actual.to_snake_keys
+    return actual
+end
+
+def getDynamicListener port, idx
+    resp = RestClient.get "http://localhost:#{port}/config_dump"
+    json = JSON.parse(resp)
+    actual = json["configs"]["listeners"]["dynamicActiveListeners"][idx]["listener"]
+    actual = actual.to_snake_keys
+    return actual
+end
+
+def getDynamicRoute port, idx
+    resp = RestClient.get "http://localhost:#{port}/config_dump"
+    json = JSON.parse(resp)
+    actual = json["configs"]["routes"]["dynamicRouteConfigs"][idx]["routeConfig"]
+    actual = actual.to_snake_keys
+    return actual
+end
+
+def getVersion port, key1, key2, idx
+    resp = RestClient.get "http://localhost:#{port}/config_dump"
+    json = JSON.parse(resp)
+    actualVersion = json["configs"][key1][key2][idx]["versionInfo"] 
+end
+
 describe "xDS" do
+    let(:port) { 9901 }
     before(:all) do
         CLUSTER_KEY = "cluster/cdstest-cluster/node/cdstest-node/cluster"
         LISTENER_KEY = "cluster/cdstest-cluster/node/cdstest-node/listener"
@@ -222,74 +253,126 @@ describe "xDS" do
         cset("#{ROUTE_KEY}/config", routes_json)
         cset("#{ROUTE_KEY}/version", route_version)
 
-        sleep 60
+        # port = 9901
+        # sleep 60
     end
 
-    it "Add a cluster" do
-        resp = RestClient.get 'http://localhost:9901/config_dump'
-        json = JSON.parse(resp)
-        actual = json["configs"]["clusters"]["dynamicActiveClusters"][0]["cluster"]
-        actual = actual.to_snake_keys
-        actualVersion = json["configs"]["clusters"]["dynamicActiveClusters"][0]["versionInfo"]
-        
-        expected = JSON.parse(clusters_json)
-        expected[0]["type"] = expected[0]["type"].upcase
+    describe "CDS" do
+        it "Add a cluster" do
+            actual = getDynamicCluster(port, 0)
+            actualVersion = getVersion(port, "clusters", "dynamicActiveClusters", 0)
+            
+            expected = JSON.parse(clusters_json)
+            expected[0]["type"] = expected[0]["type"].upcase
 
-        expect(actual).to eq(expected[0])
-        expect(actualVersion).to eq(cluster_version)
+            expect(actual).to eq(expected[0])
+            expect(actualVersion).to eq(cluster_version)
+        end
+
+        it "Add a cluster with http2 options" do
+            actual = getDynamicCluster(port, 1)
+            actualVersion = getVersion(port, "clusters", "dynamicActiveClusters", 1)
+            
+            expected = JSON.parse(clusters_json)
+            expected[1]["type"] = expected[1]["type"].upcase
+
+            expect(actual).to eq(expected[1])
+            expect(actualVersion).to eq(cluster_version)
+        end
     end
 
-    it "Add a cluster with http2 options" do
-        resp = RestClient.get 'http://localhost:9901/config_dump'
-        json = JSON.parse(resp)
-        actual = json["configs"]["clusters"]["dynamicActiveClusters"][1]["cluster"]
-        actual = actual.to_snake_keys
-        actualVersion = json["configs"]["clusters"]["dynamicActiveClusters"][1]["versionInfo"]
-        
-        expected = JSON.parse(clusters_json)
-        expected[1]["type"] = expected[1]["type"].upcase
+    describe "LDS" do
+        it 'Add a listener without rds' do
+            actual = getDynamicListener(port, 0)
+            actualVersion = getVersion(port, "listeners", "dynamicActiveListeners", 0)
 
-        expect(actual).to eq(expected[1])
-        expect(actualVersion).to eq(cluster_version)
+            expected = JSON.parse(listeners_json)
+            
+            expect(actual).to eq(expected[0])
+            expect(actualVersion).to eq(listener_version)
+        end
+
+        it 'Add a listener with rds' do
+            actual = getDynamicListener(port, 1)
+            actualVersion = getVersion(port, "listeners", "dynamicActiveListeners", 1)
+
+            expected = JSON.parse(listeners_json)
+            
+            expect(actual).to eq(expected[1])
+            expect(actualVersion).to eq(listener_version)
+        end
     end
 
-    it 'Add a listener without rds' do
-        resp = RestClient.get 'http://localhost:9901/config_dump'
-        json = JSON.parse(resp)
-        actual = json["configs"]["listeners"]["dynamicActiveListeners"][0]["listener"]
-        actual = actual.to_snake_keys
-        actualVersion = json["configs"]["listeners"]["dynamicActiveListeners"][0]["versionInfo"]
+    describe "RDS" do
+        it 'Add a dynamic route' do
+            actual = getDynamicRoute(port, 0)
+            actualVersion = getVersion(port, "routes", "dynamicRouteConfigs", 0)
 
-        expected = JSON.parse(listeners_json)
-        
-        expect(actual).to eq(expected[0])
-        expect(actualVersion).to eq(listener_version)
+            expected = JSON.parse(routes_json)
+            
+            expect(actual).to eq(expected[0])
+            expect(actualVersion).to eq(route_version)
+        end
     end
 
-    it 'Add a listener with rds' do
-        resp = RestClient.get 'http://localhost:9901/config_dump'
-        json = JSON.parse(resp)
-        actual = json["configs"]["listeners"]["dynamicActiveListeners"][1]["listener"]
-        actual = actual.to_snake_keys
-        actualVersion = json["configs"]["listeners"]["dynamicActiveListeners"][1]["versionInfo"]
+    describe "Aggregated Discovery Services(ADS)" do
+        let(:port) { 9902 }
 
-        expected = JSON.parse(listeners_json)
-        
-        expect(actual).to eq(expected[1])
-        expect(actualVersion).to eq(listener_version)
-    end
-
-    it 'Add a dynamic route' do
-        resp = RestClient.get 'http://localhost:9901/config_dump'
-        json = JSON.parse(resp)
-        actual = json["configs"]["routes"]["dynamicRouteConfigs"][0]["routeConfig"]
-        actual = actual.to_snake_keys
-        actualVersion = json["configs"]["routes"]["dynamicRouteConfigs"][0]["versionInfo"]
-
-        expected = JSON.parse(routes_json)
-        
-        expect(actual).to eq(expected[0])
-        expect(actualVersion).to eq(route_version)
+        describe "CDS" do
+            it "Add a cluster" do
+                actual = getDynamicCluster(port, 0)
+                actualVersion = getVersion(port, "clusters", "dynamicActiveClusters", 0)
+                
+                expected = JSON.parse(clusters_json)
+                expected[0]["type"] = expected[0]["type"].upcase
+    
+                expect(actual).to eq(expected[0])
+                expect(actualVersion).to eq(cluster_version)
+            end
+    
+            it "Add a cluster with http2 options" do
+                actual = getDynamicCluster(port, 1)
+                actualVersion = getVersion(port, "clusters", "dynamicActiveClusters", 1)
+                
+                expected = JSON.parse(clusters_json)
+                expected[1]["type"] = expected[1]["type"].upcase
+    
+                expect(actual).to eq(expected[1])
+                expect(actualVersion).to eq(cluster_version)
+            end
+        end
+    
+        describe "LDS" do
+            it 'Add a listener without rds' do
+                actual = getDynamicListener(port, 0)
+                actualVersion = getVersion(port, "listeners", "dynamicActiveListeners", 0)
+    
+                expected = JSON.parse(listeners_json)
+                
+                expect(actual).to eq(expected[0])
+                expect(actualVersion).to eq(listener_version)
+            end
+    
+            it 'Add a listener with rds' do
+                actual = getDynamicListener(port, 1)
+                actualVersion = getVersion(port, "listeners", "dynamicActiveListeners", 1)
+    
+                expected = JSON.parse(listeners_json)
+                
+                expect(actual).to eq(expected[1])
+                expect(actualVersion).to eq(listener_version)
+            end
+        end
+    
+        describe "RDS" do
+            it 'Add a dynamic route' do
+                actual = getDynamicRoute(port, 0)
+    
+                expected = JSON.parse(routes_json)
+                
+                expect(actual).to eq(expected[0])
+            end
+        end
     end
   end
 
