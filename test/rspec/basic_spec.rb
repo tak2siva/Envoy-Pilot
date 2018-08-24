@@ -253,8 +253,7 @@ describe "xDS" do
         cset("#{ROUTE_KEY}/config", routes_json)
         cset("#{ROUTE_KEY}/version", route_version)
 
-        # port = 9901
-        # sleep 60
+        sleep 60
     end
 
     describe "CDS" do
