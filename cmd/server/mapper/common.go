@@ -68,6 +68,10 @@ func toMap(obj interface{}) map[string]interface{} {
 	return obj.(map[string]interface{})
 }
 
+func toArray(obj interface{}) []interface{} {
+	return obj.([]interface{})
+}
+
 func keyExists(objMap map[string]interface{}, key string) bool {
 	return objMap[key] != nil
 }

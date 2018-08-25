@@ -8,6 +8,7 @@ Currently Supports
    * CDS
    * LDS
    * RDS
+   * EDS
    * ADS (for the above)
 
 *Note: Some infrequent configurations might not be mapped. Feel free to PR* 

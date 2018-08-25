@@ -20,6 +20,8 @@ func GetMapperFor(topic string) MapperStruct {
 		return &ListenerMapper{}
 	case constant.SUBSCRIBE_RDS:
 		return &RouteMapper{}
+	case constant.SUBSCRIBE_EDS:
+		return &EndpointMapper{}
 	default:
 		panic(fmt.Sprintf("No mapper found for type %s\n", topic))
 	}
