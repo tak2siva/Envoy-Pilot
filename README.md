@@ -1,6 +1,7 @@
 # Envoy-Pilot 
 
-[![Build Status](https://travis-ci.org/tak2siva/Envoy-Pilot.svg?branch=master)](https://travis-ci.org/tak2siva/Envoy-Pilot)
+[![Build Status](https://travis-ci.org/tak2siva/Envoy-Pilot.svg?branch=master)](https://travis-ci.org/tak2siva/Envoy-Pilot)    ![Version](https://img.shields.io/badge/version-v0.1.6-yellowgreen.svg)
+
 
 Envoy Pilot or Envoy xDS is a control plane implementation for [Envoy](https://github.com/envoyproxy/envoy) written in Golang and uses Consul for persistence.
 
@@ -8,6 +9,7 @@ Currently Supports
    * CDS
    * LDS
    * RDS
+   * EDS
    * ADS (for the above)
 
 *Note: Some infrequent configurations might not be mapped. Feel free to PR* 

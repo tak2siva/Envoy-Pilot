@@ -11,7 +11,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/", handler)
-	log.Println("Started server :8080..")
-	log.Fatal(http.ListenAndServe("localhost:8080", nil))
+	http.HandleFunc("/abc", handler)
+	log.Println("Started server :8123..")
+	log.Fatal(http.ListenAndServe(":8123", nil))
 }

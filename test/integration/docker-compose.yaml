@@ -2,10 +2,15 @@ version: '3'
 
 services:
   app-server:
-    image: busybox:latest
+    build: 
+      context: dummy-app/
+      dockerfile: Dockerfile-dummy-app
     networks:
       - envoy-pilot_xds-demo
-    command: "sh -c 'while true; do sleep 1000; done'"
+    ports: 
+      - "8123:8123"
+    expose: 
+      - 8123
   envoy:
     image: envoyproxy/envoy:v1.7.0
     volumes:
@@ -13,6 +18,7 @@ services:
     command: ["envoy", "-c", "/config.yaml", "--v2-config-only", "-l", "debug", "--service-cluster","cdstest-cluster","--service-node","cdstest-node"]
     ports:
       - "9901:9901"
+      - "18123:18123"
     networks:
       - envoy-pilot_xds-demo
   envoy-ads:
@@ -22,6 +28,7 @@ services:
     command: ["envoy", "-c", "/config.yaml", "--v2-config-only", "-l", "debug", "--service-cluster","cdstest-cluster","--service-node","cdstest-node"]
     ports:
       - "9902:9901"
+      - "28123:18123"
     networks:
       - envoy-pilot_xds-demo
 

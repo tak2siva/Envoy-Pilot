@@ -32,8 +32,12 @@ func buildLbPolicy(rawObj map[string]interface{}) v2.Cluster_LbPolicy {
 	return v2.Cluster_LbPolicy(lbID)
 }
 
-func buildHosts(rawObj map[string]interface{}) ([]*envoy_api_v2_core1.Address, error) {
-	rawHosts := rawObj["hosts"].([]interface{})
+func buildHosts(rawObj interface{}) ([]*envoy_api_v2_core1.Address, error) {
+	if rawObj == nil {
+		return make([]*envoy_api_v2_core1.Address, 0), nil
+	}
+
+	rawHosts := toArray(rawObj)
 	list := make([]*envoy_api_v2_core1.Address, len(rawHosts))
 
 	for i, row := range rawHosts {
@@ -81,7 +85,7 @@ func BuildDuration(str string) time.Duration {
 
 func buildHttp2ProtocolOptions(rawObj interface{}) *envoy_api_v2_core1.Http2ProtocolOptions {
 	if rawObj == nil {
-		return &envoy_api_v2_core1.Http2ProtocolOptions{}
+		return nil
 	}
 	objMap := toMap(rawObj)
 	http2 := envoy_api_v2_core1.Http2ProtocolOptions{}
@@ -113,6 +117,47 @@ func buildHttp2ProtocolOptions(rawObj interface{}) *envoy_api_v2_core1.Http2Prot
 	return &http2
 }
 
+func GetConfigSourceType(typeVal string) envoy_api_v2_core1.ApiConfigSource_ApiType {
+	id := envoy_api_v2_core1.ApiConfigSource_ApiType_value[typeVal]
+	return envoy_api_v2_core1.ApiConfigSource_ApiType(id)
+}
+
+func buildEdsClusterConfig(rawObj interface{}) *v2.Cluster_EdsClusterConfig {
+	if rawObj == nil {
+		return nil
+	}
+
+	eds_cluster_config := toMap(rawObj)
+	eds_config := toMap(eds_cluster_config["eds_config"])
+	api_config_source := toMap(eds_config["api_config_source"])
+	grpc_services := toArray(api_config_source["grpc_services"])
+
+	resGrpcServices := make([]*envoy_api_v2_core1.GrpcService, len(grpc_services))
+
+	for i, grpc_service := range grpc_services {
+		objMap := toMap(grpc_service)
+		envoy_grpc := toMap(objMap["envoy_grpc"])
+		resGrpcServices[i] = &envoy_api_v2_core1.GrpcService{
+			TargetSpecifier: &envoy_api_v2_core1.GrpcService_EnvoyGrpc_{
+				EnvoyGrpc: &envoy_api_v2_core1.GrpcService_EnvoyGrpc{
+					ClusterName: getString(envoy_grpc, "cluster_name"),
+				},
+			},
+		}
+	}
+
+	return &v2.Cluster_EdsClusterConfig{
+		EdsConfig: &envoy_api_v2_core1.ConfigSource{
+			ConfigSourceSpecifier: &envoy_api_v2_core1.ConfigSource_ApiConfigSource{
+				ApiConfigSource: &envoy_api_v2_core1.ApiConfigSource{
+					ApiType:      GetConfigSourceType(getString(api_config_source, "api_type")),
+					GrpcServices: resGrpcServices,
+				},
+			},
+		},
+	}
+}
+
 func (c *ClusterMapper) GetCluster(rawObj interface{}) (retCluster v2.Cluster, retErr error) {
 	var rawObjMap map[string]interface{}
 	if rawObj != nil {
@@ -129,8 +174,9 @@ func (c *ClusterMapper) GetCluster(rawObj interface{}) (retCluster v2.Cluster, r
 	clusterObj.Type = buildDnsType(rawObjMap)
 	clusterObj.LbPolicy = buildLbPolicy(rawObjMap)
 	clusterObj.Http2ProtocolOptions = buildHttp2ProtocolOptions(rawObjMap["http2_protocol_options"])
+	clusterObj.EdsClusterConfig = buildEdsClusterConfig(rawObjMap["eds_cluster_config"])
 
-	hosts, err := buildHosts(rawObjMap)
+	hosts, err := buildHosts(rawObjMap["hosts"])
 	if err != nil {
 		log.Panic(err)
 	}
