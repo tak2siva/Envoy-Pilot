@@ -226,7 +226,18 @@ cluster2_json = %Q{
              "address": "app-server",
              "port_value": 8123
             }
-          }]
+          }],
+        "circuit_breakers": {
+            "thresholds": [
+                {
+                    "priority": "HIGH",
+                    "max_connections": 2045,
+                    "max_pending_requests": 2046,
+                    "max_requests": 2047,
+                    "max_retries": 2048
+                }
+            ]
+        }
     }
 }
 

@@ -13,6 +13,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
 
+	envoy_api_v2_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	envoy_api_v2_core1 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
@@ -158,6 +159,55 @@ func buildEdsClusterConfig(rawObj interface{}) *v2.Cluster_EdsClusterConfig {
 	}
 }
 
+func buildThresholds(rawObj interface{}) []*envoy_api_v2_cluster.CircuitBreakers_Thresholds {
+	if rawObj == nil {
+		return nil
+	}
+	objArr := toArray(rawObj)
+	thresholds := make([]*envoy_api_v2_cluster.CircuitBreakers_Thresholds, len(objArr))
+
+	for i, rawThreshold := range objArr {
+		thresholdMap := toMap(rawThreshold)
+		priorityId := envoy_api_v2_core1.RoutingPriority_value[getString(thresholdMap, "priority")]
+
+		threshold := envoy_api_v2_cluster.CircuitBreakers_Thresholds{
+			Priority: envoy_api_v2_core1.RoutingPriority(priorityId),
+		}
+		if thresholdMap["max_connections"] != nil {
+			val, err := getUIntValue(thresholdMap, "max_connections")
+			util.CheckAndPanic(err)
+			threshold.MaxConnections = &val
+		}
+		if thresholdMap["max_pending_requests"] != nil {
+			val, err := getUIntValue(thresholdMap, "max_pending_requests")
+			util.CheckAndPanic(err)
+			threshold.MaxPendingRequests = &val
+		}
+		if thresholdMap["max_requests"] != nil {
+			val, err := getUIntValue(thresholdMap, "max_requests")
+			util.CheckAndPanic(err)
+			threshold.MaxRequests = &val
+		}
+		if thresholdMap["max_retries"] != nil {
+			val, err := getUIntValue(thresholdMap, "max_retries")
+			util.CheckAndPanic(err)
+			threshold.MaxRetries = &val
+		}
+		thresholds[i] = &threshold
+	}
+	return thresholds
+}
+
+func buildCircuitBreakers(rawObj interface{}) *envoy_api_v2_cluster.CircuitBreakers {
+	if rawObj == nil {
+		return nil
+	}
+	objMap := toMap(rawObj)
+	return &envoy_api_v2_cluster.CircuitBreakers{
+		Thresholds: buildThresholds(objMap["thresholds"]),
+	}
+}
+
 func (c *ClusterMapper) GetCluster(rawObj interface{}) (retCluster v2.Cluster, retErr error) {
 	var rawObjMap map[string]interface{}
 	if rawObj != nil {
@@ -175,6 +225,7 @@ func (c *ClusterMapper) GetCluster(rawObj interface{}) (retCluster v2.Cluster, r
 	clusterObj.LbPolicy = buildLbPolicy(rawObjMap)
 	clusterObj.Http2ProtocolOptions = buildHttp2ProtocolOptions(rawObjMap["http2_protocol_options"])
 	clusterObj.EdsClusterConfig = buildEdsClusterConfig(rawObjMap["eds_cluster_config"])
+	clusterObj.CircuitBreakers = buildCircuitBreakers(rawObjMap["circuit_breakers"])
 
 	hosts, err := buildHosts(rawObjMap["hosts"])
 	if err != nil {
