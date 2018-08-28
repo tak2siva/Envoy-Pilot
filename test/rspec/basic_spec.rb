@@ -367,10 +367,15 @@ end
 describe "xDS" do
     let(:port) { 9901 }
     before(:all) do
-        CLUSTER_KEY = "cluster/cdstest-cluster/node/cdstest-node/cluster"
-        LISTENER_KEY = "cluster/cdstest-cluster/node/cdstest-node/listener"
-        ROUTE_KEY = "cluster/cdstest-cluster/node/cdstest-node/route"
-        ENDPOINT_KEY = "cluster/cdstest-cluster/node/cdstest-node/endpoint"
+        # CLUSTER_KEY = "cluster/cdstest-cluster/node/cdstest-node/cluster"
+        # LISTENER_KEY = "cluster/cdstest-cluster/node/cdstest-node/listener"
+        # ROUTE_KEY = "cluster/cdstest-cluster/node/cdstest-node/route"
+        # ENDPOINT_KEY = "cluster/cdstest-cluster/node/cdstest-node/endpoint"
+
+        CLUSTER_KEY = "xDS/app-cluster/cdstest-cluster/CDS"
+        LISTENER_KEY = "xDS/app-cluster/cdstest-cluster/LDS"
+        ROUTE_KEY = "xDS/app-cluster/cdstest-cluster/RDS"
+        ENDPOINT_KEY = "xDS/app-cluster/cdstest-cluster/EDS"
 
         cdelete(CLUSTER_KEY)
         cdelete(LISTENER_KEY)

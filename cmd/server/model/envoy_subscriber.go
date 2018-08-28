@@ -32,11 +32,13 @@ func (e *EnvoySubscriber) ToJSON() string {
 }
 
 func (e *EnvoySubscriber) BuildInstanceKey() string {
-	return fmt.Sprintf("cluster/%s/node/%s/%s/%d", e.Cluster, e.Node, e.SubscribedTo, e.Id)
+	// return fmt.Sprintf("cluster/%s/node/%s/%s/%d", e.Cluster, e.Node, e.SubscribedTo, e.Id)
+	return fmt.Sprintf("%s/app-cluster/%s/%s/nodes/%s_%d", constant.CONSUL_PREFIX, e.Cluster, e.SubscribedTo, e.Node, e.Id)
 }
 
 func (e *EnvoySubscriber) BuildRootKey() string {
-	return fmt.Sprintf("cluster/%s/node/%s/%s/", e.Cluster, e.Node, e.SubscribedTo)
+	// return fmt.Sprintf("cluster/%s/node/%s/%s/", e.Cluster, e.Node, e.SubscribedTo)
+	return fmt.Sprintf("%s/app-cluster/%s/%s/", constant.CONSUL_PREFIX, e.Cluster, e.SubscribedTo)
 }
 
 func (e *EnvoySubscriber) IsEqual(that *EnvoySubscriber) bool {

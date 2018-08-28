@@ -23,8 +23,8 @@ xDS Server will be exposed on port 7777
 Run Envoy Proxy with the following configurations or use `--service-node` && `--service-cluster`
 ```
 node:
-  id: TN
-  cluster: India
+  id: ride-service-replica-2
+  cluster: ride-service
 ```
 
 Every *DS requires two keys to be set in consul
@@ -34,8 +34,8 @@ Every *DS requires two keys to be set in consul
 And the key template is `cluster/CLUSTER_NAME/node/NODE_NAME/DISCOVERY_TYPE/(config|version)`
 
 For CDS add KV pairs
-  * `cluster/India/node/TN/cluster/version` => "1.0"
-  * `cluster/India/node/TN/cluster/config` => `"[{
+  * `xDS/app-cluster/ride-service/CDS/version` => "1.0"
+  * `xDS/app-cluster/ride-service/CDS/config` => `"[{
       {
         "name": "app1",
         "connect_timeout": "0.250s",
@@ -52,7 +52,7 @@ For CDS add KV pairs
 
 Pushing new configuration
   * Envoy-Pilot will be polling for version change every 10 seconds.  
-  * If there is a version mismatch for any of `cluster/India/node/TN/(cluster|listener|route)/version` then new config `cluster/India/node/TN/(cluster|listener|route)/config` will be pushed to subscriber envoy.
+  * If there is a version mismatch for any of `xDS/app-cluster/ride-service/(CDS|LDS|RDS|EDS)/version` then new config `xDS/app-cluster/ride-service/(CDS|LDS|RDS|EDS)/config` will be pushed to subscriber envoy.
   * If update succeed there will be an ACK log for the instance.
 
 ## Running Docker Compose
@@ -69,6 +69,13 @@ docker-compose -f docker-compose.server.yaml up --build
 
 Consul url need to be set in .env
 
+env_values.txt
+```
+CONSUL_PATH="http://consul-server:8500"
+CONSUL_PREFIX=""xDS"
+```
+
+Docker run
 ```
 docker run -v $(pwd)/env_values.txt:/.env -p 7777:7777 -p 9090:9090 tak2siva/envoy-pilot:latest
 ```
@@ -86,7 +93,7 @@ Install using the [Helm Chart for Envoy-Pilot](https://github.com/tak2siva/Envoy
 
   **Ex:** 
   ```
-  http://localhost:9090/dump/cds/cluster/India/node/TN/cluster/config
+  http://localhost:9090/dump/xDS/app-cluster/ride-service/(CDS|LDS|RDS|EDS)/config
   ```
 
 

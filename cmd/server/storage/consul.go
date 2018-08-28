@@ -2,6 +2,7 @@ package storage
 
 import (
 	"Envoy-Pilot/cmd/server/constant"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -33,6 +34,7 @@ func GetConsulWrapper() ConsulWrapper {
 			log.Fatal("Error loading .env file")
 		}
 		consulPath := os.Getenv("CONSUL_PATH")
+
 		log.Printf("Consul Path: %s\n", consulPath)
 		config := &consul.Config{Address: consulPath}
 
@@ -42,6 +44,11 @@ func GetConsulWrapper() ConsulWrapper {
 			panic(err)
 		}
 		singletonConsulWrapper.client = client
+
+		consulPrefix := os.Getenv("CONSUL_PREFIX")
+		if len(consulPrefix) > 0 {
+			constant.CONSUL_PREFIX = consulPrefix
+		}
 	}
 	return singletonConsulWrapper
 }
@@ -63,14 +70,18 @@ func (c *ConsulWrapper) GetUniqId() int {
 	panic("Unable to generate new id")
 }
 
+func GetSequenceKey() string {
+	return fmt.Sprintf("%s/%s", constant.CONSUL_PREFIX, envoySubscriberSequenceKey)
+}
+
 func (c *ConsulWrapper) checkAndSetUniqId() (bool, int, error) {
-	pair, _, err := c.client.KV().Get(envoySubscriberSequenceKey, nil)
+	pair, _, err := c.client.KV().Get(GetSequenceKey(), nil)
 	if err != nil {
 		panic(err)
 	}
 	if pair == nil {
 		log.Println("nil value...")
-		c.Set(envoySubscriberSequenceKey, "1")
+		c.Set(GetSequenceKey(), "1")
 		return true, 1, nil
 		// pair = c.Get(envoySubscriberSequenceKey)
 	}
