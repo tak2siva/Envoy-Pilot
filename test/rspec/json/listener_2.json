@@ -13,15 +13,6 @@
                     "name": "envoy.http_connection_manager",
                     "config": {
                         "stat_prefix": "ingress_http",
-                        "access_log": [
-                            {
-                                "name": "envoy.file_access_log",
-                                "config": {
-                                    "path": "/dev/stdout",
-                                    "format": "[ACCESS_LOG][%START_TIME%] \"%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%\" %RESPONSE_CODE% %RESPONSE_FLAGS% %BYTES_RECEIVED% %BYTES_SENT% %DURATION% %RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)% \"%REQ(X-FORWARDED-FOR)%\" \"%REQ(USER-AGENT)%\" \"%REQ(X-REQUEST-ID)%\" \"%REQ(:AUTHORITY)%\" \"%UPSTREAM_HOST%\" \"%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT%\"\n"
-                                }
-                            }
-                        ],
                         "codec_type": "auto",
                         "generate_request_id": true,
                         "route_config": {

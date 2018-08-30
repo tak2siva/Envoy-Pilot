@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"runtime/debug"
+	"strings"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/envoyproxy/go-control-plane/pkg/util"
@@ -213,6 +214,22 @@ func buildHttpFilter(rawConfig interface{}) []*hcm.HttpFilter {
 	return res
 }
 
+func buildTracing(rawObj interface{}) *hcm.HttpConnectionManager_Tracing {
+	if rawObj == nil {
+		return nil
+	}
+	log.Printf("Tracing: %+v\n", rawObj)
+	objMap := toMap(rawObj)
+	log.Printf("Tracing: %+v\n", objMap)
+
+	operationName := getString(objMap, "operation_name")
+	operationName = strings.ToUpper(operationName)
+	operationId := hcm.HttpConnectionManager_Tracing_OperationName_value[operationName]
+	return &hcm.HttpConnectionManager_Tracing{
+		OperationName: hcm.HttpConnectionManager_Tracing_OperationName(operationId),
+	}
+}
+
 func buildHttpConnectionManager(rawConfig map[string]interface{}) hcm.HttpConnectionManager {
 	als := buildAccessLog(rawConfig["access_log"])
 	codec := hcm.HttpConnectionManager_CodecType_value[getString(rawConfig, "codec_type")]
@@ -226,6 +243,10 @@ func buildHttpConnectionManager(rawConfig map[string]interface{}) hcm.HttpConnec
 	if keyExists(rawConfig, "generate_request_id") {
 		boolVal := getBoolValue(rawConfig, "generate_request_id")
 		manager.GenerateRequestId = &boolVal
+	}
+
+	if keyExists(rawConfig, "tracing") {
+		manager.Tracing = buildTracing(rawConfig["tracing"])
 	}
 
 	if rawConfig["rds"] != nil {
