@@ -4,6 +4,7 @@ import (
 	"Envoy-Pilot/cmd/server/constant"
 	"Envoy-Pilot/cmd/server/model"
 	"context"
+	"errors"
 	"log"
 
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
@@ -32,6 +33,11 @@ func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryS
 			return err
 		}
 		if i == 0 {
+			if !IsValidSubscriber(req) {
+				log.Printf("[%s] Error: Invalid cluster or node id %+v\n", constant.SUBSCRIBE_ADS, req)
+				cancel()
+				return errors.New("Invalid cluster or node id")
+			}
 			subscriber = &model.EnvoySubscriber{
 				Cluster:            req.Node.Cluster,
 				Node:               req.Node.Id,

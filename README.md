@@ -31,7 +31,7 @@ Every *DS requires two keys to be set in consul
   * config
   * version
 
-And the key template is `cluster/CLUSTER_NAME/node/NODE_NAME/DISCOVERY_TYPE/(config|version)`
+And the key template is `xDS/app-cluster/ride-service/CDS/(config|version)`
 
 For CDS add KV pairs
   * `xDS/app-cluster/ride-service/CDS/version` => "1.0"

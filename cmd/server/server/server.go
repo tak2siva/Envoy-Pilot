@@ -52,7 +52,7 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 			return err
 		}
 		if i == 0 {
-			if !s.isValidSubscriber(req) {
+			if !IsValidSubscriber(req) {
 				log.Printf("[%s] Error: Invalid cluster or node id %+v\n", xdsType, req)
 				cancel()
 				return errors.New("Invalid cluster or node id")
@@ -79,8 +79,8 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 	}
 }
 
-func (s *Server) isValidSubscriber(req *v2.DiscoveryRequest) bool {
+func IsValidSubscriber(req *v2.DiscoveryRequest) bool {
 	fmt.Printf("Node: %s -- len: %d\n", req.Node.Id, len(req.Node.Id))
 	fmt.Printf("Cluster: %s -- len: %d\n", req.Node.Cluster, len(req.Node.Cluster))
-	return (len(req.Node.Cluster) > 0) || (len(req.Node.Id) > 0)
+	return (len(req.Node.Cluster) > 0) && (len(req.Node.Id) > 0)
 }
