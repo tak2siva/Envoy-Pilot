@@ -1,0 +1,56 @@
+{
+    "name": "listener_0",
+    "address": {
+        "socket_address": {
+            "address": "0.0.0.0",
+            "port_value": 80
+        }
+    },
+    "filter_chains": [
+        {
+            "filters": [
+                {
+                    "name": "envoy.http_connection_manager",
+                    "config": {
+                        "stat_prefix": "ingress_http",
+                        "access_log": [],
+                        "codec_type": "HTTP2",
+                        "route_config": {
+                            "name": "local_http_router",
+                            "virtual_hosts": [
+                                {
+                                    "name": "local_service",
+                                    "domains": [
+                                        "*"
+                                    ],
+                                    "routes": [
+                                        {
+                                            "match": {
+                                                "prefix": "/"
+                                            },
+                                            "route": {
+                                                "cluster": "app1"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        "http_filters": [
+                            {
+                                "name": "envoy.health_check",
+                                "config": {
+                                    "pass_through_mode": false,
+                                    "endpoint": "/healthz"
+                                }
+                            },
+                            {
+                                "name": "envoy.router"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}

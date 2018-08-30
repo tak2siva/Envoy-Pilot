@@ -1,0 +1,57 @@
+{
+    "name": "listener_2",
+    "address": {
+        "socket_address": {
+            "address": "0.0.0.0",
+            "port_value": 18123
+        }
+    },
+    "filter_chains": [
+        {
+            "filters": [
+                {
+                    "name": "envoy.http_connection_manager",
+                    "config": {
+                        "stat_prefix": "ingress_http",
+                        "access_log": [
+                            {
+                                "name": "envoy.file_access_log",
+                                "config": {
+                                    "path": "/dev/stdout",
+                                    "format": "[ACCESS_LOG][%START_TIME%] \"%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%\" %RESPONSE_CODE% %RESPONSE_FLAGS% %BYTES_RECEIVED% %BYTES_SENT% %DURATION% %RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)% \"%REQ(X-FORWARDED-FOR)%\" \"%REQ(USER-AGENT)%\" \"%REQ(X-REQUEST-ID)%\" \"%REQ(:AUTHORITY)%\" \"%UPSTREAM_HOST%\" \"%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT%\"\n"
+                                }
+                            }
+                        ],
+                        "codec_type": "auto",
+                        "route_config": {
+                            "name": "local_http_router",
+                            "virtual_hosts": [
+                                {
+                                    "name": "local_service",
+                                    "domains": [
+                                        "*"
+                                    ],
+                                    "routes": [
+                                        {
+                                            "match": {
+                                                "prefix": "/"
+                                            },
+                                            "route": {
+                                                "cluster": "app3"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        "http_filters": [
+                            {
+                                "name": "envoy.router"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}

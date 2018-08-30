@@ -7,168 +7,9 @@ Diplomat.configure do |config|
     config.url = 'http://localhost:8500'
 end
 
-listener0_json = %Q{
-    {
-        "name": "listener_0",
-        "address": {
-            "socket_address": {
-                "address": "0.0.0.0",
-                "port_value": 80
-            }
-        },
-        "filter_chains": [
-            {
-                "filters": [
-                    {
-                        "name": "envoy.http_connection_manager",
-                        "config": {
-                            "stat_prefix": "ingress_http",
-                            "access_log": [],
-                            "codec_type": "HTTP2",
-                            "route_config": {
-                                "name": "local_http_router",
-                                "virtual_hosts": [
-                                    {
-                                        "name": "local_service",
-                                        "domains": [
-                                            "*"
-                                        ],
-                                        "routes": [
-                                            {
-                                                "match": {
-                                                    "prefix": "/"
-                                                },
-                                                "route": {
-                                                    "cluster": "app1"
-                                                }
-                                            }
-                                        ]
-                                    }
-                                ]
-                            },
-                            "http_filters": [
-                                {
-                                    "name": "envoy.health_check",
-                                    "config": {
-                                        "pass_through_mode": false,
-                                        "endpoint": "/healthz"
-                                    }
-                                },
-                                {
-                                    "name": "envoy.router"
-                                }
-                            ]
-                        }
-                    }
-                ]
-            }
-        ]
-    }
-}
-
-listener1_json = %Q{
-    {
-        "name": "listener_1",
-        "address": {
-           "socket_address": {
-              "address": "127.0.0.1",
-              "port_value": 10001
-           }
-        },
-        "filter_chains": [
-           {
-              "filters": [
-                 {
-                    "name": "envoy.http_connection_manager",
-                    "config": {
-                       "stat_prefix": "ingress_http",
-                       "access_log": [
-                          {
-                             "name": "envoy.file_access_log",
-                             "config": {
-                                "path": "/dev/stdout",
-                                "format": "some-format"
-                             }
-                          }
-                       ],
-                       "codec_type": "HTTP2",
-                       "rds": {
-                          "route_config_name": "listener_1_route",
-                          "config_source": {
-                             "api_config_source": {
-                                "api_type": "GRPC",
-                                "grpc_services": [{
-                                   "envoy_grpc": {
-                                      "cluster_name": "xds_cluster"
-                                   }
-                                }]
-                             }
-                          }
-                       },
-                       "http_filters": [
-                          {
-                             "name": "envoy.router"
-                          }
-                       ]
-                    }
-                 }
-              ]
-           }
-        ]
-     }
-}
-
-listener2_json = %Q{
-    {
-        "name": "listener_2",
-        "address": {
-            "socket_address": {
-                "address": "0.0.0.0",
-                "port_value": 18123
-            }
-        },
-        "filter_chains": [
-            {
-                "filters": [
-                    {
-                        "name": "envoy.http_connection_manager",
-                        "config": {
-                            "stat_prefix": "ingress_http",
-                            "access_log": [],
-                            "codec_type": "auto",
-                            "route_config": {
-                                "name": "local_http_router",
-                                "virtual_hosts": [
-                                    {
-                                        "name": "local_service",
-                                        "domains": [
-                                            "*"
-                                        ],
-                                        "routes": [
-                                            {
-                                                "match": {
-                                                    "prefix": "/"
-                                                },
-                                                "route": {
-                                                    "cluster": "app3"
-                                                }
-                                            }
-                                        ]
-                                    }
-                                ]
-                            },
-                            "http_filters": [
-                                {
-                                    "name": "envoy.router"
-                                }
-                            ]
-                        }
-                    }
-                ]
-            }
-        ]
-    }
-}
+listener0_json = File.read 'json/listener_0.json'
+listener1_json = File.read 'json/listener_1.json'
+listener2_json = File.read 'json/listener_2.json'
 
 listeners_json = %Q{
     [
@@ -178,89 +19,10 @@ listeners_json = %Q{
     ]
 }
 
-cluster0_json = %Q{
-    {
-        "name": "app1",
-        "connect_timeout": "0.250s",
-        "type": "strict_dns",
-        "lb_policy": "RANDOM",
-        "http2_protocol_options": {},
-        "hosts": [{
-          "socket_address": {
-           "address": "127.0.0.2",
-           "port_value": 1234
-          }
-        }]
-    }
-}
-
-cluster1_json = %Q{
-    {
-        "name": "app1-grpc",
-        "connect_timeout": "0.250s",
-        "type": "strict_dns",
-        "lb_policy": "RANDOM",
-        "http2_protocol_options": {
-            "hpack_table_size": 12,
-            "max_concurrent_streams": 14,
-            "initial_stream_window_size": 268435456,
-            "initial_connection_window_size": 268435456
-        },
-        "hosts": [{
-          "socket_address": {
-           "address": "127.0.0.2",
-           "port_value": 1234
-          }
-        }]
-    }
-}
-
-cluster2_json = %Q{
-    {
-        "name": "app3",
-        "connect_timeout": "0.250s",
-        "lb_policy": "ROUND_ROBIN",
-        "type": "strict_dns",
-        "hosts": [{
-            "socket_address": {
-             "address": "app-server",
-             "port_value": 8123
-            }
-          }],
-        "circuit_breakers": {
-            "thresholds": [
-                {
-                    "priority": "HIGH",
-                    "max_connections": 2045,
-                    "max_pending_requests": 2046,
-                    "max_requests": 2047,
-                    "max_retries": 2048
-                }
-            ]
-        }
-    }
-}
-
-cluster3_json = %Q{
-    {
-        "name": "app4",
-        "connect_timeout": "0.250s",
-        "lb_policy": "RANDOM",
-        "type": "EDS",
-        "eds_cluster_config": {
-            "eds_config": {
-                "api_config_source": {
-                    "api_type": "GRPC",
-                    "grpc_services": [{
-                        "envoy_grpc": {
-                            "cluster_name": "xds_cluster"
-                        }
-                    }]
-                }
-            }
-        }
-    }
-}
+cluster0_json = File.read 'json/cluster_0.json'
+cluster1_json = File.read 'json/cluster_1.json'
+cluster2_json = File.read 'json/cluster_2.json'
+cluster3_json = File.read 'json/cluster_3.json'
 
 clusters_json = %Q{
     [
@@ -367,11 +129,6 @@ end
 describe "xDS" do
     let(:port) { 9901 }
     before(:all) do
-        # CLUSTER_KEY = "cluster/cdstest-cluster/node/cdstest-node/cluster"
-        # LISTENER_KEY = "cluster/cdstest-cluster/node/cdstest-node/listener"
-        # ROUTE_KEY = "cluster/cdstest-cluster/node/cdstest-node/route"
-        # ENDPOINT_KEY = "cluster/cdstest-cluster/node/cdstest-node/endpoint"
-
         CLUSTER_KEY = "xDS/app-cluster/cdstest-cluster/CDS"
         LISTENER_KEY = "xDS/app-cluster/cdstest-cluster/LDS"
         ROUTE_KEY = "xDS/app-cluster/cdstest-cluster/RDS"
@@ -393,7 +150,7 @@ describe "xDS" do
         cset("#{ENDPOINT_KEY}/config", endpoints_json)
         cset("#{ENDPOINT_KEY}/version", endpoint_version)
 
-        sleep 60
+        # sleep 60
     end
 
     describe "CDS" do

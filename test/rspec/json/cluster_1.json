@@ -1,0 +1,18 @@
+{
+  "name": "app1-grpc",
+  "connect_timeout": "0.250s",
+  "type": "strict_dns",
+  "lb_policy": "RANDOM",
+  "http2_protocol_options": {
+      "hpack_table_size": 12,
+      "max_concurrent_streams": 14,
+      "initial_stream_window_size": 268435456,
+      "initial_connection_window_size": 268435456
+  },
+  "hosts": [{
+    "socket_address": {
+     "address": "127.0.0.2",
+     "port_value": 1234
+    }
+  }]
+}

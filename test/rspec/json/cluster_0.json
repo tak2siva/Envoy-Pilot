@@ -1,0 +1,13 @@
+{
+    "name": "app1",
+    "connect_timeout": "0.250s",
+    "type": "strict_dns",
+    "lb_policy": "RANDOM",
+    "http2_protocol_options": {},
+    "hosts": [{
+      "socket_address": {
+       "address": "127.0.0.2",
+       "port_value": 1234
+      }
+    }]
+}

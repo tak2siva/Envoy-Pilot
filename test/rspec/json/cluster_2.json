@@ -1,0 +1,23 @@
+{
+  "name": "app3",
+  "connect_timeout": "0.250s",
+  "lb_policy": "ROUND_ROBIN",
+  "type": "strict_dns",
+  "hosts": [{
+      "socket_address": {
+       "address": "app-server",
+       "port_value": 8123
+      }
+    }],
+  "circuit_breakers": {
+      "thresholds": [
+          {
+              "priority": "HIGH",
+              "max_connections": 2045,
+              "max_pending_requests": 2046,
+              "max_requests": 2047,
+              "max_retries": 2048
+          }
+      ]
+  }
+}

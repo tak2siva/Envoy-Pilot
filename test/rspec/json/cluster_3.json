@@ -1,0 +1,18 @@
+{
+    "name": "app4",
+    "connect_timeout": "0.250s",
+    "lb_policy": "RANDOM",
+    "type": "EDS",
+    "eds_cluster_config": {
+        "eds_config": {
+            "api_config_source": {
+                "api_type": "GRPC",
+                "grpc_services": [{
+                    "envoy_grpc": {
+                        "cluster_name": "xds_cluster"
+                    }
+                }]
+            }
+        }
+    }
+}
