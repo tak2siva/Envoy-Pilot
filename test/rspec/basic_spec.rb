@@ -150,7 +150,7 @@ describe "xDS" do
         cset("#{ENDPOINT_KEY}/config", endpoints_json)
         cset("#{ENDPOINT_KEY}/version", endpoint_version)
 
-        # sleep 60
+        sleep 60
     end
 
     describe "CDS" do
