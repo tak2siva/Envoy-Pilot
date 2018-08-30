@@ -23,6 +23,7 @@
                             }
                         ],
                         "codec_type": "auto",
+                        "generate_request_id": true,
                         "route_config": {
                             "name": "local_http_router",
                             "virtual_hosts": [

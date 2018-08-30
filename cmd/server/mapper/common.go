@@ -51,6 +51,12 @@ func getBoolean(obj map[string]interface{}, key string) bool {
 	return obj[key].(bool)
 }
 
+func getBoolValue(obj map[string]interface{}, key string) google_protobuf1.BoolValue {
+	return google_protobuf1.BoolValue{
+		Value: getBoolean(obj, key),
+	}
+}
+
 func getStringArray(obj map[string]interface{}, key string) []string {
 	arr := obj[key].([]interface{})
 	res := make([]string, len(arr))

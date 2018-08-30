@@ -223,6 +223,11 @@ func buildHttpConnectionManager(rawConfig map[string]interface{}) hcm.HttpConnec
 		AccessLog:   als,
 	}
 
+	if keyExists(rawConfig, "generate_request_id") {
+		boolVal := getBoolValue(rawConfig, "generate_request_id")
+		manager.GenerateRequestId = &boolVal
+	}
+
 	if rawConfig["rds"] != nil {
 		rds := buildRds(rawConfig["rds"])
 		manager.RouteSpecifier = &rds
