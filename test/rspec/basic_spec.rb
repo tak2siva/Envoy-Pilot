@@ -129,27 +129,28 @@ end
 describe "xDS" do
     let(:port) { 9901 }
     before(:all) do
-        CLUSTER_KEY = "xDS/app-cluster/cdstest-cluster/CDS"
-        LISTENER_KEY = "xDS/app-cluster/cdstest-cluster/LDS"
-        ROUTE_KEY = "xDS/app-cluster/cdstest-cluster/RDS"
-        ENDPOINT_KEY = "xDS/app-cluster/cdstest-cluster/EDS"
-
-        cdelete(CLUSTER_KEY)
-        cdelete(LISTENER_KEY)
-        cdelete(ROUTE_KEY)
-
-        cset("#{CLUSTER_KEY}/config", clusters_json)
-        cset("#{CLUSTER_KEY}/version", cluster_version)
-
-        cset("#{LISTENER_KEY}/config", listeners_json)
-        cset("#{LISTENER_KEY}/version", listener_version)
-
-        cset("#{ROUTE_KEY}/config", routes_json)
-        cset("#{ROUTE_KEY}/version", route_version)
-
-        cset("#{ENDPOINT_KEY}/config", endpoints_json)
-        cset("#{ENDPOINT_KEY}/version", endpoint_version)
-
+        ['xdstest-cluster', 'adstest-cluster'].each { |type|
+            clusterKey = "xDS/app-cluster/#{type}/CDS"
+            listenerKey = "xDS/app-cluster/#{type}/LDS"
+            routeKey = "xDS/app-cluster/#{type}/RDS"
+            endpointKey = "xDS/app-cluster/#{type}/EDS"
+    
+            cdelete(clusterKey)
+            cdelete(listenerKey)
+            cdelete(routeKey)
+    
+            cset("#{clusterKey}/config", clusters_json)
+            cset("#{clusterKey}/version", cluster_version)
+    
+            cset("#{listenerKey}/config", listeners_json)
+            cset("#{listenerKey}/version", listener_version)
+    
+            cset("#{routeKey}/config", routes_json)
+            cset("#{routeKey}/version", route_version)
+    
+            cset("#{endpointKey}/config", endpoints_json)
+            cset("#{endpointKey}/version", endpoint_version)    
+        }
         sleep 60
     end
 

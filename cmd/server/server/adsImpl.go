@@ -30,6 +30,7 @@ func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryS
 			log.Printf("[%s] Disconnecting client %s\n", constant.SUBSCRIBE_ADS, subscriber.BuildInstanceKey())
 			log.Println(err)
 			cancel()
+			defaultPushService.DeleteSubscriber(subscriber)
 			return err
 		}
 		if i == 0 {

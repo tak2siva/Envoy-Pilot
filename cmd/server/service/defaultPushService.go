@@ -64,6 +64,16 @@ func (c *DefaultPushService) RegisterEnvoy(ctx context.Context,
 	}
 }
 
+// RemoveSubscriber Delete entry
+func (c *DefaultPushService) DeleteSubscriber(subscriber *model.EnvoySubscriber) {
+	c.xdsConfigDao.DeleteSubscriber(subscriber)
+	if subscriber.IsADS() {
+		for _, val := range subscriber.AdsList {
+			c.xdsConfigDao.DeleteSubscriber(val)
+		}
+	}
+}
+
 func (c *DefaultPushService) consulPoll(ctx context.Context, dispatchChannel chan string) {
 	i := 0
 	for {

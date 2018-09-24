@@ -86,3 +86,30 @@ func TestXdsConfigDao_GetClusterACK(t *testing.T) {
 		t.Errorf("Nonce is not set properly..\n")
 	}
 }
+func TestXdsConfigDao_DeleteSubscriber(t *testing.T) {
+	subscriber := model.EnvoySubscriber{
+		Id:                   0,
+		Cluster:              "del-cluster",
+		Node:                 "del-node",
+		UpdateSuccess:        1,
+		UpdateFailures:       0,
+		LastUpdatedVersion:   "1.0",
+		LastUpdatedTimestamp: time.Now(),
+		SubscribedTo:         "CDS",
+	}
+
+	dao.RegisterSubscriber(&subscriber)
+	result := wrapper.Get(subscriber.BuildInstanceKey() + "/meta")
+
+	if result == nil {
+		t.Error("Error registering subscriber..")
+	}
+
+	dao.DeleteSubscriber(&subscriber)
+	result2 := wrapper.Get(subscriber.BuildInstanceKey() + "/meta")
+
+	if result2 != nil {
+		log.Println(result2.Value)
+		t.Error("Error deleting subscriber..")
+	}
+}

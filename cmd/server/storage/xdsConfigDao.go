@@ -23,6 +23,11 @@ func (dao *XdsConfigDao) RegisterSubscriber(sub *model.EnvoySubscriber) {
 	log.Printf("Registered new subscriber %s", sub.BuildInstanceKey())
 }
 
+func (dao *XdsConfigDao) DeleteSubscriber(sub *model.EnvoySubscriber) {
+	dao.consulWrapper.Delete(metaKey(sub))
+	log.Printf("Deleted entry for subscriber %s", sub.BuildInstanceKey())
+}
+
 func (dao *XdsConfigDao) IsRepoPresent(sub *model.EnvoySubscriber) bool {
 	if dao.consulWrapper.Get(sub.BuildRootKey()+"version") == nil || dao.consulWrapper.Get(sub.BuildRootKey()+"config") == nil {
 		return false

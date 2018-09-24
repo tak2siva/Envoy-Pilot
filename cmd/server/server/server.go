@@ -49,6 +49,7 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 			log.Printf("[%s] Disconnecting client %s\n", xdsType, subscriber.BuildInstanceKey())
 			log.Println(err)
 			cancel()
+			defaultPushService.DeleteSubscriber(subscriber)
 			return err
 		}
 		if i == 0 {
