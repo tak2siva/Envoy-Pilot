@@ -42,7 +42,7 @@ func DecActiveConnections(en *model.EnvoySubscriber) {
 func IncActiveSubscribers(en *model.EnvoySubscriber, topic string) {
 	METRICS_ACTIVE_SUBSCRIBERS.With(prometheus.Labels{
 		"cluster": en.Cluster,
-		"type":    en.SubscribedTo,
+		"type":    topic,
 	}).Inc()
 }
 
