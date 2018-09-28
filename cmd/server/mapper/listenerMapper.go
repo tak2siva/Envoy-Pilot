@@ -218,9 +218,9 @@ func buildTracing(rawObj interface{}) *hcm.HttpConnectionManager_Tracing {
 	if rawObj == nil {
 		return nil
 	}
-	log.Printf("Tracing: %+v\n", rawObj)
+	// log.Printf("Tracing: %+v\n", rawObj)
 	objMap := toMap(rawObj)
-	log.Printf("Tracing: %+v\n", objMap)
+	// log.Printf("Tracing: %+v\n", objMap)
 
 	operationName := getString(objMap, "operation_name")
 	operationName = strings.ToUpper(operationName)
