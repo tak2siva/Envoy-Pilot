@@ -2,6 +2,7 @@ package util
 
 import (
 	"log"
+	"strings"
 )
 
 func Check(err error) {
@@ -15,4 +16,11 @@ func CheckAndPanic(err error) {
 		log.Println("[Util] Error..", err)
 		panic(err)
 	}
+}
+
+func TrimVersion(version string) string {
+	if len(version) != 0 {
+		return strings.Trim(version, `"'`)
+	}
+	return ""
 }

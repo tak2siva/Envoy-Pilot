@@ -3,6 +3,7 @@ package server
 import (
 	"Envoy-Pilot/cmd/server/constant"
 	"Envoy-Pilot/cmd/server/model"
+	"Envoy-Pilot/cmd/server/util"
 	"context"
 	"errors"
 	"log"
@@ -43,7 +44,7 @@ func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryS
 				Cluster:            req.Node.Cluster,
 				Node:               req.Node.Id,
 				SubscribedTo:       constant.SUBSCRIBE_ADS,
-				LastUpdatedVersion: getReqVersion(req.VersionInfo),
+				LastUpdatedVersion: util.TrimVersion(req.VersionInfo),
 				AdsList:            make(map[string]*model.EnvoySubscriber),
 			}
 			serverCtx = context.WithValue(serverCtx, envoySubscriberKey, subscriber)
@@ -59,7 +60,7 @@ func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryS
 				Cluster:            req.Node.Cluster,
 				Node:               req.Node.Id,
 				SubscribedTo:       topic,
-				LastUpdatedVersion: getReqVersion(req.VersionInfo),
+				LastUpdatedVersion: util.TrimVersion(req.VersionInfo),
 			}
 			subscriber.AdsList[topic] = currentSubscriber
 			defaultPushService.RegisterEnvoy(serverCtx, stream, subscriber, dispatchChannel)

@@ -2,6 +2,7 @@ package storage
 
 import (
 	"Envoy-Pilot/cmd/server/model"
+	"Envoy-Pilot/cmd/server/util"
 	"fmt"
 	"log"
 )
@@ -13,7 +14,7 @@ type XdsConfigDao struct {
 }
 
 func (dao *XdsConfigDao) GetLatestVersion(sub *model.EnvoySubscriber) string {
-	return dao.consulWrapper.GetString(sub.BuildRootKey() + "version")
+	return util.TrimVersion(dao.consulWrapper.GetString(sub.BuildRootKey() + "version"))
 }
 
 func (dao *XdsConfigDao) RegisterSubscriber(sub *model.EnvoySubscriber) {

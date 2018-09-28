@@ -4,11 +4,11 @@ import (
 	"Envoy-Pilot/cmd/server/model"
 	"Envoy-Pilot/cmd/server/service"
 	"Envoy-Pilot/cmd/server/storage"
+	"Envoy-Pilot/cmd/server/util"
 	"context"
 	"errors"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 )
@@ -22,13 +22,6 @@ var v2Helper *service.V2HelperService
 func init() {
 	defaultPushService = service.GetDefaultPushService()
 	xdsConfigDao = storage.GetXdsConfigDao()
-}
-
-func getReqVersion(version string) string {
-	if len(version) != 0 {
-		return strings.Trim(version, `"'`)
-	}
-	return ""
 }
 
 // Server struct will impl CDS, LDS, RDS & ADS
@@ -62,7 +55,7 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 				Cluster:            req.Node.Cluster,
 				Node:               req.Node.Id,
 				SubscribedTo:       xdsType,
-				LastUpdatedVersion: getReqVersion(req.VersionInfo),
+				LastUpdatedVersion: util.TrimVersion(req.VersionInfo),
 			}
 			serverCtx = context.WithValue(serverCtx, envoySubscriberKey, subscriber)
 			defaultPushService.RegisterEnvoy(serverCtx, stream, subscriber, dispatchChannel)

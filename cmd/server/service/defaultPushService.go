@@ -5,6 +5,7 @@ import (
 	"Envoy-Pilot/cmd/server/mapper"
 	"Envoy-Pilot/cmd/server/model"
 	"Envoy-Pilot/cmd/server/storage"
+	"Envoy-Pilot/cmd/server/util"
 	"context"
 	"log"
 	"time"
@@ -37,7 +38,13 @@ func GetDefaultPushService() *DefaultPushService {
 
 // IsOutdated check if the last dispatched config is outdated
 func (c *DefaultPushService) IsOutdated(en *model.EnvoySubscriber) bool {
-	return c.xdsConfigDao.GetLatestVersion(en) != en.LastUpdatedVersion
+	latest := util.TrimVersion(c.xdsConfigDao.GetLatestVersion(en))
+	actual := util.TrimVersion(en.LastUpdatedVersion)
+	res := latest != actual
+	if res {
+		log.Printf("Found update actual: %s --- latest: %s for  %s\n", actual, latest, en.BuildInstanceKey())
+	}
+	return res
 }
 
 // RegisterEnvoy register & subscribe new envoy instance

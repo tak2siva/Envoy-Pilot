@@ -14,6 +14,7 @@ func SetUpHttpServer() {
 	http.HandleFunc("/ping", pingHandler)
 	http.HandleFunc("/dump/cds/", configDumpCDS)
 	http.HandleFunc("/dump/lds/", configDumpLDS)
+	log.Println("Starting http server on :9090..")
 	err := http.ListenAndServe(":9090", nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
