@@ -2,6 +2,7 @@ package server
 
 import (
 	"Envoy-Pilot/cmd/server/constant"
+	"Envoy-Pilot/cmd/server/metrics"
 	"Envoy-Pilot/cmd/server/model"
 	"Envoy-Pilot/cmd/server/util"
 	"context"
@@ -32,6 +33,8 @@ func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryS
 			log.Println(err)
 			cancel()
 			defaultPushService.DeleteSubscriber(subscriber)
+			metrics.DecActiveConnections(subscriber)
+			metrics.DecActiveSubscribers(subscriber)
 			return err
 		}
 		if i == 0 {
@@ -49,6 +52,7 @@ func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryS
 			}
 			serverCtx = context.WithValue(serverCtx, envoySubscriberKey, subscriber)
 			defaultPushService.RegisterEnvoy(serverCtx, stream, subscriber, dispatchChannel)
+			metrics.IncActiveConnections(subscriber)
 			i++
 		}
 
@@ -64,6 +68,7 @@ func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryS
 			}
 			subscriber.AdsList[topic] = currentSubscriber
 			defaultPushService.RegisterEnvoy(serverCtx, stream, subscriber, dispatchChannel)
+			metrics.IncActiveSubscribers(subscriber, currentSubscriber.SubscribedTo)
 		} else {
 			currentSubscriber = subscriber.AdsList[topic]
 		}

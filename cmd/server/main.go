@@ -2,6 +2,7 @@ package main
 
 import (
 	"Envoy-Pilot/cmd/server/dump"
+	"Envoy-Pilot/cmd/server/metrics"
 	"Envoy-Pilot/cmd/server/server"
 	"Envoy-Pilot/cmd/server/storage"
 	"fmt"
@@ -32,6 +33,8 @@ func consulHealthCheck() {
 
 func main() {
 	go dump.SetUpHttpServer()
+	go metrics.StartMetricsServer()
+
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 7777))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)

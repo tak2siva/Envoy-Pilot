@@ -1,6 +1,7 @@
 package server
 
 import (
+	"Envoy-Pilot/cmd/server/metrics"
 	"Envoy-Pilot/cmd/server/model"
 	"Envoy-Pilot/cmd/server/service"
 	"Envoy-Pilot/cmd/server/storage"
@@ -43,6 +44,8 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 			log.Println(err)
 			cancel()
 			defaultPushService.DeleteSubscriber(subscriber)
+			metrics.DecActiveConnections(subscriber)
+			metrics.DecActiveSubscribers(subscriber)
 			return err
 		}
 		if i == 0 {
@@ -59,6 +62,8 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 			}
 			serverCtx = context.WithValue(serverCtx, envoySubscriberKey, subscriber)
 			defaultPushService.RegisterEnvoy(serverCtx, stream, subscriber, dispatchChannel)
+			metrics.IncActiveConnections(subscriber)
+			metrics.IncActiveSubscribers(subscriber, subscriber.SubscribedTo)
 			i++
 		}
 

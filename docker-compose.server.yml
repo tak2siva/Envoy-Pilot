@@ -19,6 +19,7 @@ services:
       - "2345:2345"
       - "9090:9090"
       - "7777:7777"
+      - "8081:8081"
     networks:
       - envoy-pilot_xds-demo
 
