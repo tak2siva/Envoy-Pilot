@@ -9,6 +9,8 @@ import (
 	"errors"
 	"log"
 
+	"google.golang.org/grpc/peer"
+
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 )
 
@@ -19,9 +21,15 @@ func (s *Server) IncrementalAggregatedResources(_ discovery.AggregatedDiscoveryS
 
 // StreamAggregatedResources - ADS server impl
 func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryService_StreamAggregatedResourcesServer) error {
-	log.Printf("[%s] -------------- Starting a %s stream ------------------\n", constant.SUBSCRIBE_ADS, constant.SUBSCRIBE_ADS)
+	clientPeer, ok := peer.FromContext(stream.Context())
+	clientIP := "unknown"
+	if ok {
+		clientIP = clientPeer.Addr.String()
+	}
+	log.Printf("[%s] -------------- Starting a %s stream from %s ------------------\n", constant.SUBSCRIBE_ADS, constant.SUBSCRIBE_ADS, clientIP)
 
 	serverCtx, cancel := context.WithCancel(context.Background())
+
 	dispatchChannel := make(chan string)
 	i := 0
 	var subscriber *model.EnvoySubscriber

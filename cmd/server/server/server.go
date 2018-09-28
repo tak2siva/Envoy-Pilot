@@ -12,6 +12,7 @@ import (
 	"log"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"google.golang.org/grpc/peer"
 )
 
 const envoySubscriberKey = "envoySubscriber"
@@ -30,7 +31,12 @@ type Server struct{}
 
 // BiDiStreamFor common bi-directional stream impl for cds,lds,rds
 func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) error {
-	log.Printf("[%s] -------------- Starting a %s stream ------------------\n", xdsType, xdsType)
+	clientPeer, ok := peer.FromContext(stream.Context())
+	clientIP := "unknown"
+	if ok {
+		clientIP = clientPeer.Addr.String()
+	}
+	log.Printf("[%s] -------------- Starting a %s stream from %s ------------------\n", xdsType, xdsType, clientIP)
 
 	serverCtx, cancel := context.WithCancel(context.Background())
 	dispatchChannel := make(chan string)

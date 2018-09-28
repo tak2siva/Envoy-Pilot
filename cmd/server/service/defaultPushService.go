@@ -174,6 +174,7 @@ func (c *DefaultPushService) buildDiscoveryResponseFor(subscriber *model.EnvoySu
 type XDSStreamServer interface {
 	Send(*v2.DiscoveryResponse) error
 	Recv() (*v2.DiscoveryRequest, error)
+	Context() context.Context
 }
 
 func (c *DefaultPushService) dispatchData(ctx context.Context, stream XDSStreamServer,
