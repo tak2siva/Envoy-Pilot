@@ -300,12 +300,6 @@ func (c *ListenerMapper) GetListener(rawObj interface{}) (retListener v2.Listene
 		rawListener = rawObj.(map[string]interface{})
 	}
 
-	log.Println("*************")
-	for k := range rawListener {
-		log.Println(k)
-	}
-	log.Println("*************")
-
 	listenerObj.Name = rawListener["name"].(string)
 	addr, err := buildHost(rawListener["address"].(map[string]interface{}))
 	if err != nil {

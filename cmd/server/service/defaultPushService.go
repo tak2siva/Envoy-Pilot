@@ -196,8 +196,9 @@ func (c *DefaultPushService) dispatchData(ctx context.Context, stream XDSStreamS
 			continue
 		}
 
-		log.Printf("%+v\n", response)
-		log.Printf("Sending config to %s \n %+v \n", subscriber.BuildInstanceKey(), response)
+		// TODO add log level
+		// log.Printf("%+v\n", response)
+		// log.Printf("Sending config to %s \n %+v \n", subscriber.BuildInstanceKey(), response)
 
 		c.xdsConfigDao.SaveNonce(subscriber, response.Nonce)
 		err = stream.Send(response)
