@@ -19,6 +19,7 @@ var singletonDefaultPushService *DefaultPushService
 // DefaultPushService  a service class for cluster specific functionalities
 type DefaultPushService struct {
 	xdsConfigDao    *storage.XdsConfigDao
+	subscriberDao   *storage.SubscriberDao
 	clusterMapper   mapper.ClusterMapper
 	listenerMapper  mapper.ListenerMapper
 	v2HelperService *V2HelperService
@@ -29,6 +30,7 @@ func GetDefaultPushService() *DefaultPushService {
 	if singletonDefaultPushService == nil {
 		singletonDefaultPushService = &DefaultPushService{
 			xdsConfigDao:    storage.GetXdsConfigDao(),
+			subscriberDao:   storage.GetSubscriberDao(),
 			clusterMapper:   mapper.ClusterMapper{},
 			v2HelperService: &V2HelperService{},
 		}
@@ -52,33 +54,19 @@ func (c *DefaultPushService) RegisterEnvoy(ctx context.Context,
 	stream XDSStreamServer,
 	subscriber *model.EnvoySubscriber, dispatchChannel chan string) {
 	if subscriber.IsADS() {
-		if subscriber.Id == 0 {
-			c.xdsConfigDao.RegisterSubscriber(subscriber)
-			go c.consulPollADS(ctx, dispatchChannel)
-			go c.dispatchData(ctx, stream, dispatchChannel)
-		}
-		for _, s := range subscriber.AdsList {
-			if s.Id == 0 {
-				c.xdsConfigDao.RegisterSubscriber(s)
-			}
-		}
+		c.subscriberDao.RegisterSubscriber(subscriber)
+		go c.consulPollADS(ctx, dispatchChannel)
+		go c.dispatchData(ctx, stream, dispatchChannel)
 	} else {
-		if subscriber.Id == 0 {
-			c.xdsConfigDao.RegisterSubscriber(subscriber)
-			go c.consulPoll(ctx, dispatchChannel)
-			go c.dispatchData(ctx, stream, dispatchChannel)
-		}
+		c.subscriberDao.RegisterSubscriber(subscriber)
+		go c.consulPoll(ctx, dispatchChannel)
+		go c.dispatchData(ctx, stream, dispatchChannel)
 	}
 }
 
 // RemoveSubscriber Delete entry
 func (c *DefaultPushService) DeleteSubscriber(subscriber *model.EnvoySubscriber) {
-	c.xdsConfigDao.DeleteSubscriber(subscriber)
-	if subscriber.IsADS() {
-		for _, val := range subscriber.AdsList {
-			c.xdsConfigDao.DeleteSubscriber(val)
-		}
-	}
+	c.subscriberDao.DeleteSubscriber(subscriber)
 }
 
 func (c *DefaultPushService) consulPoll(ctx context.Context, dispatchChannel chan string) {

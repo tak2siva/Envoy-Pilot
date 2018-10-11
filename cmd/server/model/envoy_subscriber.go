@@ -10,6 +10,7 @@ import (
 
 type EnvoySubscriber struct {
 	Id                 int
+	Guid               string
 	Cluster            string
 	Node               string
 	UpdateSuccess      int
