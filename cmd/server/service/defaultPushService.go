@@ -189,12 +189,12 @@ func (c *DefaultPushService) dispatchData(ctx context.Context, stream XDSStreamS
 		// log.Printf("%+v\n", response)
 		// log.Printf("Sending config to %s \n %+v \n", subscriber.BuildInstanceKey(), response)
 
-		c.xdsConfigDao.SaveNonce(subscriber, response.Nonce)
+		c.subscriberDao.SaveNonce(subscriber, response.Nonce)
 		err = stream.Send(response)
 		if err != nil {
 			log.Println("error sending to client")
 			log.Println(err)
-			c.xdsConfigDao.RemoveNonce(subscriber, response.Nonce)
+			c.subscriberDao.RemoveNonce(subscriber, response.Nonce)
 		} else {
 			log.Printf("Successfully Sent config to %s \n", subscriber.BuildInstanceKey())
 		}
@@ -206,7 +206,8 @@ func (c *DefaultPushService) dispatchData(ctx context.Context, stream XDSStreamS
 // if yes update the last updated version
 func (c *DefaultPushService) HandleACK(subscriber *model.EnvoySubscriber, req *v2.DiscoveryRequest) {
 	log.Printf("Received ACK %s from %s", req.ResponseNonce, subscriber.BuildInstanceKey())
-	c.xdsConfigDao.RemoveNonce(subscriber, req.ResponseNonce)
+	// c.xdsConfigDao.RemoveNonce(subscriber, req.ResponseNonce)
+	c.subscriberDao.RemoveNonce(subscriber, req.ResponseNonce)
 	subscriber.LastUpdatedVersion = req.VersionInfo
-	c.xdsConfigDao.UpdateEnvoySubscriber(subscriber)
+	// c.xdsConfigDao.UpdateEnvoySubscriber(subscriber)
 }

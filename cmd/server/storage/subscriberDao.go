@@ -13,13 +13,13 @@ type SubscriberDao struct {
 	consulWrapper ConsulWrapper
 }
 
-var once *SubscriberDao
+var onceSubscriberDao *SubscriberDao
 
 func GetSubscriberDao() *SubscriberDao {
-	if once == nil {
-		once = &SubscriberDao{consulWrapper: GetConsulWrapper()}
+	if onceSubscriberDao == nil {
+		onceSubscriberDao = &SubscriberDao{consulWrapper: GetConsulWrapper()}
 	}
-	return once
+	return onceSubscriberDao
 }
 
 func (dao *SubscriberDao) RegisterSubscriber(sub *model.EnvoySubscriber) {
@@ -33,4 +33,18 @@ func (dao *SubscriberDao) RegisterSubscriber(sub *model.EnvoySubscriber) {
 
 func (dao *SubscriberDao) DeleteSubscriber(sub *model.EnvoySubscriber) {
 	delete(cache.SUBSCRIBER_CACHE, sub.Guid)
+}
+
+func (dao *SubscriberDao) SaveNonce(sub *model.EnvoySubscriber, nonce string) {
+	log.Printf("Writing ACK %s\n", nonceStreamKey(sub, nonce))
+	cache.NONCE_CACHE[nonceStreamKey(sub, nonce)] = true
+}
+
+func (dao *SubscriberDao) IsACK(sub *model.EnvoySubscriber, ack string) bool {
+	_, ok := cache.NONCE_CACHE[nonceStreamKey(sub, ack)]
+	return ok
+}
+
+func (dao *SubscriberDao) RemoveNonce(sub *model.EnvoySubscriber, nonce string) {
+	delete(cache.NONCE_CACHE, nonceStreamKey(sub, nonce))
 }

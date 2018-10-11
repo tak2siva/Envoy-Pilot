@@ -34,6 +34,8 @@ RUN mkdir -p $GOPATH/src/github.com/matttproud
 WORKDIR $GOPATH/src/github.com/matttproud
 RUN git clone https://github.com/matttproud/golang_protobuf_extensions.git
 
+RUN go get github.com/rs/xid
+
 # TODO Compile on build
 #RUN mkdir res
 #RUN find $GOPATH/src/envoy -name '*.proto' | xargs -I % sh -c 'protoc --go_out=/res/ % --proto_path=$GOPATH/src/ \

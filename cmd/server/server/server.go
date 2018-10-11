@@ -19,11 +19,13 @@ const envoySubscriberKey = "envoySubscriber"
 
 var defaultPushService *service.DefaultPushService
 var xdsConfigDao *storage.XdsConfigDao
+var subscriberDao *storage.SubscriberDao
 var v2Helper *service.V2HelperService
 
 func init() {
 	defaultPushService = service.GetDefaultPushService()
 	xdsConfigDao = storage.GetXdsConfigDao()
+	subscriberDao = storage.GetSubscriberDao()
 }
 
 // Server struct will impl CDS, LDS, RDS & ADS
@@ -75,7 +77,7 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 
 		log.Printf("[%s] Received Request from %s\n %+v\n", xdsType, subscriber.BuildInstanceKey(), req)
 
-		if xdsConfigDao.IsACK(subscriber, req.ResponseNonce) {
+		if subscriberDao.IsACK(subscriber, req.ResponseNonce) {
 			defaultPushService.HandleACK(subscriber, req)
 			continue
 		} else {

@@ -4,7 +4,6 @@ import (
 	"Envoy-Pilot/cmd/server/model"
 	"Envoy-Pilot/cmd/server/util"
 	"fmt"
-	"log"
 )
 
 var once *XdsConfigDao
@@ -15,18 +14,6 @@ type XdsConfigDao struct {
 
 func (dao *XdsConfigDao) GetLatestVersion(sub *model.EnvoySubscriber) string {
 	return util.TrimVersion(dao.consulWrapper.GetString(sub.BuildRootKey() + "version"))
-}
-
-func (dao *XdsConfigDao) RegisterSubscriber(sub *model.EnvoySubscriber) {
-	id := dao.consulWrapper.GetUniqId()
-	sub.Id = id
-	dao.consulWrapper.Set(metaKey(sub), sub.ToJSON())
-	log.Printf("Registered new subscriber %s", sub.BuildInstanceKey())
-}
-
-func (dao *XdsConfigDao) DeleteSubscriber(sub *model.EnvoySubscriber) {
-	dao.consulWrapper.Delete(metaKey(sub))
-	log.Printf("Deleted entry for subscriber %s", sub.BuildInstanceKey())
 }
 
 func (dao *XdsConfigDao) IsRepoPresent(sub *model.EnvoySubscriber) bool {
@@ -40,37 +27,10 @@ func (dao *XdsConfigDao) GetConfigJson(sub *model.EnvoySubscriber) (string, stri
 	return dao.consulWrapper.GetString(sub.BuildRootKey() + "config"), dao.GetLatestVersion(sub)
 }
 
-func (dao *XdsConfigDao) SaveNonce(sub *model.EnvoySubscriber, nonce string) {
-	dao.consulWrapper.Set(nonceStreamKey(sub, nonce), "true")
-	log.Printf("Writing ACK %s\n", nonceStreamKey(sub, nonce))
-}
-
-func (dao *XdsConfigDao) IsACK(sub *model.EnvoySubscriber, ack string) bool {
-	return dao.consulWrapper.Get(nonceStreamKey(sub, ack)) != nil
-}
-
-func (dao *XdsConfigDao) IsListenerACK(sub *model.EnvoySubscriber, ack string) bool {
-	return dao.consulWrapper.Get(nonceStreamKey(sub, ack)) != nil
-}
-
-func (dao *XdsConfigDao) RemoveNonce(sub *model.EnvoySubscriber, nonce string) {
-	err := dao.consulWrapper.Delete(nonceStreamKey(sub, nonce))
-	if err != nil {
-		log.Printf("Error deleting nonce %s\n", nonceStreamKey(sub, nonce))
-	}
-}
-
-func (dao *XdsConfigDao) RemoveListenerNonce(sub *model.EnvoySubscriber, nonce string) {
-	err := dao.consulWrapper.Delete(nonceStreamKey(sub, nonce))
-	if err != nil {
-		log.Printf("Error deleting nonce %s\n", nonceStreamKey(sub, nonce))
-	}
-}
-
-func (dao *XdsConfigDao) UpdateEnvoySubscriber(sub *model.EnvoySubscriber) {
-	log.Printf("Updating envoy subscriber %+v\n", sub)
-	dao.consulWrapper.Set(metaKey(sub), sub.ToJSON())
-}
+// func (dao *XdsConfigDao) UpdateEnvoySubscriber(sub *model.EnvoySubscriber) {
+// 	log.Printf("Updating envoy subscriber %+v\n", sub)
+// 	dao.consulWrapper.Set(metaKey(sub), sub.ToJSON())
+// }
 
 func nonceStreamKey(sub *model.EnvoySubscriber, nonce string) string {
 	return fmt.Sprintf("%s/Nonce/Stream/%s", sub.BuildInstanceKey(), nonce)

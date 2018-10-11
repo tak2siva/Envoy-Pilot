@@ -83,7 +83,7 @@ func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryS
 
 		log.Printf("[%s] Received Request from %s\n %+v\n", constant.SUBSCRIBE_ADS, currentSubscriber.BuildInstanceKey(), req)
 
-		if xdsConfigDao.IsACK(currentSubscriber, req.ResponseNonce) {
+		if subscriberDao.IsACK(currentSubscriber, req.ResponseNonce) {
 			defaultPushService.HandleACK(currentSubscriber, req)
 			continue
 		} else {
