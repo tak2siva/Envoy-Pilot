@@ -15,6 +15,8 @@ import (
 )
 
 var singletonDefaultPushService *DefaultPushService
+var versionChangeChannel = make(chan string)
+var pollTopics = make(map[string]string)
 
 // DefaultPushService  a service class for cluster specific functionalities
 type DefaultPushService struct {
@@ -49,17 +51,27 @@ func (c *DefaultPushService) IsOutdated(en *model.EnvoySubscriber) bool {
 	return res
 }
 
+func (c *DefaultPushService) IsOutdated2(subscribedTopic string, lastVersion string) bool {
+	latest := util.TrimVersion(c.xdsConfigDao.GetLatestVersionFor(subscribedTopic))
+	actual := util.TrimVersion(lastVersion)
+	res := latest != actual
+	if res {
+		log.Printf("Found update actual: %s --- latest: %s for  %s\n", actual, latest, subscribedTopic)
+	}
+	return res
+}
+
 // RegisterEnvoy register & subscribe new envoy instance
 func (c *DefaultPushService) RegisterEnvoy(ctx context.Context,
 	stream XDSStreamServer,
 	subscriber *model.EnvoySubscriber, dispatchChannel chan string) {
 	if subscriber.IsADS() {
 		c.subscriberDao.RegisterSubscriber(subscriber)
-		go c.consulPollADS(ctx, dispatchChannel)
+		go c.listenForUpdatesADS(ctx, dispatchChannel)
 		go c.dispatchData(ctx, stream, dispatchChannel)
 	} else {
 		c.subscriberDao.RegisterSubscriber(subscriber)
-		go c.consulPoll(ctx, dispatchChannel)
+		go c.listenForUpdates(ctx, dispatchChannel)
 		go c.dispatchData(ctx, stream, dispatchChannel)
 	}
 }
@@ -69,70 +81,89 @@ func (c *DefaultPushService) DeleteSubscriber(subscriber *model.EnvoySubscriber)
 	c.subscriberDao.DeleteSubscriber(subscriber)
 }
 
-func (c *DefaultPushService) consulPoll(ctx context.Context, dispatchChannel chan string) {
+func (c *DefaultPushService) listenForUpdates(ctx context.Context, dispatchChannel chan string) {
 	i := 0
-	for {
-		time.Sleep(10 * time.Second)
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
-		subscriber := ctx.Value(constant.ENVOY_SUBSCRIBER_KEY).(*model.EnvoySubscriber)
-		if !c.xdsConfigDao.IsRepoPresent(subscriber) {
+	subscriber := ctx.Value(constant.ENVOY_SUBSCRIBER_KEY).(*model.EnvoySubscriber)
+	c.registerPollTopic(ctx, dispatchChannel)
+
+	if !c.xdsConfigDao.IsRepoPresent(subscriber) {
+		log.Printf("No repo found for subscriber %s\n", subscriber.BuildInstanceKey())
+	}
+	for message := range versionChangeChannel {
+		if message == subscriber.BuildRootKey() {
 			if i == 0 {
-				log.Printf("No repo found for subscriber %s\n", subscriber.BuildInstanceKey())
+				// Move Up
+				log.Printf("[%s] latestVersion: %s --- actualVersion: %s\n", subscriber.BuildInstanceKey(), c.xdsConfigDao.GetLatestVersion(subscriber), subscriber.LastUpdatedVersion)
 				i++
 			}
-			continue
-		}
 
-		if i == 0 {
-			log.Printf("[%s] latestVersion: %s --- actualVersion: %s\n", subscriber.BuildInstanceKey(), c.xdsConfigDao.GetLatestVersion(subscriber), subscriber.LastUpdatedVersion)
-			i++
-		}
+			// In complete
+			// Update version cache after
+			// Use new isOutdated
+			// init updateLoop
 
-		if c.IsOutdated(subscriber) {
-			log.Printf("Found update dispatching for %s\n", subscriber.BuildInstanceKey())
-			dispatchChannel <- ""
+			if c.IsOutdated(subscriber) {
+				log.Printf("Found update dispatching for %s\n", subscriber.BuildInstanceKey())
+				dispatchChannel <- ""
+			}
 		}
 	}
 }
 
-func (c *DefaultPushService) consulPollADS(ctx context.Context, dispatchChannel chan string) {
+func (c *DefaultPushService) listenForUpdatesADS(ctx context.Context, dispatchChannel chan string) {
 	i := 0
-	for {
-		time.Sleep(10 * time.Second)
-		select {
-		case <-ctx.Done():
-			return
-		default:
+	subscriber := ctx.Value(constant.ENVOY_SUBSCRIBER_KEY).(*model.EnvoySubscriber)
+	c.registerPollTopicADS(ctx, dispatchChannel)
+
+	if !c.xdsConfigDao.IsRepoPresent(subscriber) {
+		log.Printf("No repo found for subscriber %s\n", subscriber.BuildInstanceKey())
+	}
+	for message := range versionChangeChannel {
+		// Match any of ads members
+		// Refactor
+		hasUpdate := false
+		for _, sub := range subscriber.AdsList {
+			hasUpdate = message == sub.BuildRootKey()
 		}
-		subscribers := ctx.Value(constant.ENVOY_SUBSCRIBER_KEY).(*model.EnvoySubscriber)
-		for _, topic := range constant.SUPPORTED_TYPES {
-			subscriber := subscribers.AdsList[topic]
-			if subscriber == nil {
-				continue
-			}
-			if !c.xdsConfigDao.IsRepoPresent(subscriber) {
-				if i == 0 {
-					log.Printf("No repo found for subscriber %s\n", subscriber.BuildInstanceKey())
-				}
-				continue
+		if hasUpdate {
+			if i == 0 {
+				// Move Up
+				log.Printf("[%s] latestVersion: %s --- actualVersion: %s\n", subscriber.BuildInstanceKey(), c.xdsConfigDao.GetLatestVersion(subscriber), subscriber.LastUpdatedVersion)
+				i++
 			}
 
-			if i == 0 {
-				log.Printf("[%s] latestVersion: %s --- actualVersion: %s\n", subscriber.BuildInstanceKey(), c.xdsConfigDao.GetLatestVersion(subscriber), subscriber.LastUpdatedVersion)
-			}
+			// In complete
 
 			if c.IsOutdated(subscriber) {
 				log.Printf("Found update dispatching for %s\n", subscriber.BuildInstanceKey())
-				dispatchChannel <- topic
+				dispatchChannel <- ""
 			}
 		}
+	}
+}
 
-		if i == 0 {
-			i++
+func (c *DefaultPushService) registerPollTopic(ctx context.Context, dispatchChannel chan string) {
+	subscriber := ctx.Value(constant.ENVOY_SUBSCRIBER_KEY).(*model.EnvoySubscriber)
+	pollTopics[subscriber.BuildRootKey()] = "nil"
+}
+
+func (c *DefaultPushService) registerPollTopicADS(ctx context.Context, dispatchChannel chan string) {
+	adsSubscriber := ctx.Value(constant.ENVOY_SUBSCRIBER_KEY).(*model.EnvoySubscriber)
+	for _, topic := range constant.SUPPORTED_TYPES {
+		subscriber := adsSubscriber.AdsList[topic]
+		pollTopics[subscriber.BuildRootKey()] = "nil"
+	}
+}
+
+func (c *DefaultPushService) consulPollLoop(ctx context.Context, dispatchChannel chan string) {
+	for {
+		time.Sleep(10 * time.Second)
+		// Check for updates
+		// Update
+		for topic, version := range pollTopics {
+			if c.IsOutdated2(topic, version) {
+				versionChangeChannel <- topic
+			}
 		}
 	}
 }

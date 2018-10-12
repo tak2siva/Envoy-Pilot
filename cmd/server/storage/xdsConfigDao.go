@@ -16,6 +16,10 @@ func (dao *XdsConfigDao) GetLatestVersion(sub *model.EnvoySubscriber) string {
 	return util.TrimVersion(dao.consulWrapper.GetString(sub.BuildRootKey() + "version"))
 }
 
+func (dao *XdsConfigDao) GetLatestVersionFor(subscriberKey string) string {
+	return util.TrimVersion(dao.consulWrapper.GetString(subscriberKey + "version"))
+}
+
 func (dao *XdsConfigDao) IsRepoPresent(sub *model.EnvoySubscriber) bool {
 	if dao.consulWrapper.Get(sub.BuildRootKey()+"version") == nil || dao.consulWrapper.Get(sub.BuildRootKey()+"config") == nil {
 		return false
