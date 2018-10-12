@@ -10,11 +10,13 @@ Currently Supports
    * LDS
    * RDS
    * EDS
-   * ADS (for the above)
+   * ADS (for CDS & LDS)
 
 *Note: Some infrequent configurations might not be mapped. Feel free to PR* 
 
 Checkout [Envoy XDS PROTOCOL Overview](https://github.com/envoyproxy/data-plane-api/blob/master/XDS_PROTOCOL.md) for more detail
+
+Also Checkout Sample Project [Envoy xDS Example](https://github.com/tak2siva/Envoy-xDS-Example)
 
 ## Usage
 
