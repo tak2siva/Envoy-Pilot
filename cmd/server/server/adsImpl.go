@@ -57,6 +57,7 @@ func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryS
 				SubscribedTo:       constant.SUBSCRIBE_ADS,
 				LastUpdatedVersion: util.TrimVersion(req.VersionInfo),
 				AdsList:            make(map[string]*model.EnvoySubscriber),
+				IpAddress:          clientIP,
 			}
 			serverCtx = context.WithValue(serverCtx, envoySubscriberKey, subscriber)
 			defaultPushService.RegisterEnvoy(serverCtx, stream, subscriber, dispatchChannel)
@@ -73,6 +74,7 @@ func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryS
 				Node:               req.Node.Id,
 				SubscribedTo:       topic,
 				LastUpdatedVersion: util.TrimVersion(req.VersionInfo),
+				IpAddress:          clientIP,
 			}
 			subscriber.AdsList[topic] = currentSubscriber
 			defaultPushService.RegisterEnvoyADS(serverCtx, stream, currentSubscriber, dispatchChannel)

@@ -1,8 +1,10 @@
 package dump
 
 import (
+	"Envoy-Pilot/cmd/server/cache"
 	"Envoy-Pilot/cmd/server/mapper"
 	"Envoy-Pilot/cmd/server/storage"
+	"Envoy-Pilot/cmd/server/util"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -14,6 +16,8 @@ func SetUpHttpServer() {
 	http.HandleFunc("/ping", pingHandler)
 	http.HandleFunc("/dump/cds/", configDumpCDS)
 	http.HandleFunc("/dump/lds/", configDumpLDS)
+	http.HandleFunc("/dump/subscribers/", subscribersDump)
+
 	log.Println("Starting http server on :9090..")
 	err := http.ListenAndServe(":9090", nil)
 	if err != nil {
@@ -69,4 +73,8 @@ func configDumpLDS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, "%s", resJson)
+}
+
+func subscribersDump(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "%s", util.ToJson(cache.SUBSCRIBER_CACHE))
 }

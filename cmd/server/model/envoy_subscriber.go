@@ -21,7 +21,8 @@ type EnvoySubscriber struct {
 	LastUpdatedTimestamp time.Time
 	SubscribedTo         string
 	// SubscribedToV2       []string // for ads
-	AdsList map[string]*EnvoySubscriber
+	AdsList   map[string]*EnvoySubscriber
+	IpAddress string
 }
 
 func (e *EnvoySubscriber) ToJSON() string {

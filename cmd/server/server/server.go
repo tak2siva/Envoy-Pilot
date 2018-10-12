@@ -66,6 +66,7 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 				Node:               req.Node.Id,
 				SubscribedTo:       xdsType,
 				LastUpdatedVersion: util.TrimVersion(req.VersionInfo),
+				IpAddress:          clientIP,
 			}
 			serverCtx = context.WithValue(serverCtx, envoySubscriberKey, subscriber)
 			defaultPushService.RegisterEnvoy(serverCtx, stream, subscriber, dispatchChannel)
