@@ -24,7 +24,8 @@ func GetSubscriberDao() *SubscriberDao {
 
 func (dao *SubscriberDao) RegisterSubscriber(sub *model.EnvoySubscriber) {
 	guid := xid.New().String()
-	if len(guid) > 0 {
+	if _, ok := cache.SUBSCRIBER_CACHE[guid]; ok {
+		log.Printf("---%s---\n", sub.Guid)
 		log.Fatal(fmt.Sprintf("Subscrber %+v registered already", sub))
 	}
 	sub.Guid = guid

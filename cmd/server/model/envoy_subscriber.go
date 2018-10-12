@@ -2,6 +2,7 @@ package model
 
 import (
 	"Envoy-Pilot/cmd/server/constant"
+	"Envoy-Pilot/cmd/server/util"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -37,6 +38,11 @@ func (e *EnvoySubscriber) BuildInstanceKey() string {
 	return fmt.Sprintf("%s/app-cluster/%s/%s/nodes/%s_%d", constant.CONSUL_PREFIX, e.Cluster, e.SubscribedTo, e.Node, e.Id)
 }
 
+func (e *EnvoySubscriber) BuildInstanceKey2() string {
+	// return fmt.Sprintf("cluster/%s/node/%s/%s/%d", e.Cluster, e.Node, e.SubscribedTo, e.Id)
+	return fmt.Sprintf("%s/app-cluster/%s/%s/%s", constant.CONSUL_PREFIX, e.Cluster, e.SubscribedTo, e.Guid)
+}
+
 func (e *EnvoySubscriber) BuildRootKey() string {
 	// return fmt.Sprintf("cluster/%s/node/%s/%s/", e.Cluster, e.Node, e.SubscribedTo)
 	return fmt.Sprintf("%s/app-cluster/%s/%s/", constant.CONSUL_PREFIX, e.Cluster, e.SubscribedTo)
@@ -52,4 +58,10 @@ func (e *EnvoySubscriber) IsADS() bool {
 
 func (e *EnvoySubscriber) GetAdsSubscriber(topic string) *EnvoySubscriber {
 	return e.AdsList[topic]
+}
+
+func (e *EnvoySubscriber) IsOutdated(newVersion string) bool {
+	latest := util.TrimVersion(newVersion)
+	actual := util.TrimVersion(e.LastUpdatedVersion)
+	return latest != actual
 }

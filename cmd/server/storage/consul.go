@@ -120,7 +120,11 @@ func (c *ConsulWrapper) Get(key string) *consul.KVPair {
 
 func (c *ConsulWrapper) GetString(key string) string {
 	pair := c.Get(key)
-	return string(pair.Value)
+	if pair != nil {
+		return string(pair.Value)
+	} else {
+		return ""
+	}
 }
 
 func (c *ConsulWrapper) GetInt(key string) int {

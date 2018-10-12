@@ -30,7 +30,7 @@ func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryS
 
 	serverCtx, cancel := context.WithCancel(context.Background())
 
-	dispatchChannel := make(chan string)
+	dispatchChannel := make(chan model.ConfigMeta)
 	i := 0
 	var subscriber *model.EnvoySubscriber
 
@@ -75,13 +75,13 @@ func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryS
 				LastUpdatedVersion: util.TrimVersion(req.VersionInfo),
 			}
 			subscriber.AdsList[topic] = currentSubscriber
-			defaultPushService.RegisterEnvoy(serverCtx, stream, subscriber, dispatchChannel)
+			defaultPushService.RegisterEnvoyADS(serverCtx, stream, currentSubscriber, dispatchChannel)
 			metrics.IncActiveSubscribers(subscriber, currentSubscriber.SubscribedTo)
 		} else {
 			currentSubscriber = subscriber.AdsList[topic]
 		}
 
-		log.Printf("[%s] Received Request from %s\n %+v\n", constant.SUBSCRIBE_ADS, currentSubscriber.BuildInstanceKey(), req)
+		log.Printf("[%s] Received Request from %s\n %s\n", constant.SUBSCRIBE_ADS, currentSubscriber.BuildInstanceKey(), util.ToJson(req))
 
 		if subscriberDao.IsACK(currentSubscriber, req.ResponseNonce) {
 			defaultPushService.HandleACK(currentSubscriber, req)

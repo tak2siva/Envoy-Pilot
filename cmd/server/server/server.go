@@ -8,7 +8,6 @@ import (
 	"Envoy-Pilot/cmd/server/util"
 	"context"
 	"errors"
-	"fmt"
 	"log"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -41,7 +40,7 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 	log.Printf("[%s] -------------- Starting a %s stream from %s ------------------\n", xdsType, xdsType, clientIP)
 
 	serverCtx, cancel := context.WithCancel(context.Background())
-	dispatchChannel := make(chan string)
+	dispatchChannel := make(chan model.ConfigMeta)
 	i := 0
 	var subscriber *model.EnvoySubscriber
 
@@ -75,7 +74,7 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 			i++
 		}
 
-		log.Printf("[%s] Received Request from %s\n %+v\n", xdsType, subscriber.BuildInstanceKey(), req)
+		log.Printf("[%s] Received Request from %s\n %s\n", xdsType, subscriber.BuildInstanceKey(), util.ToJson(req))
 
 		if subscriberDao.IsACK(subscriber, req.ResponseNonce) {
 			defaultPushService.HandleACK(subscriber, req)
@@ -87,7 +86,5 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 }
 
 func IsValidSubscriber(req *v2.DiscoveryRequest) bool {
-	fmt.Printf("Node: %s -- len: %d\n", req.Node.Id, len(req.Node.Id))
-	fmt.Printf("Cluster: %s -- len: %d\n", req.Node.Cluster, len(req.Node.Cluster))
 	return (len(req.Node.Cluster) > 0) && (len(req.Node.Id) > 0)
 }
