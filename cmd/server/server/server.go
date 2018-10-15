@@ -47,7 +47,7 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 	for {
 		req, err := stream.Recv()
 		if err != nil {
-			log.Printf("[%s] Disconnecting client %s\n", xdsType, subscriber.BuildInstanceKey())
+			log.Printf("[%s] Disconnecting client %s\n", xdsType, subscriber.BuildInstanceKey2())
 			log.Println(err)
 			cancel()
 			defaultPushService.DeleteSubscriber(subscriber)
@@ -75,7 +75,7 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 			i++
 		}
 
-		log.Printf("[%s] Received Request from %s\n %s\n", xdsType, subscriber.BuildInstanceKey(), util.ToJson(req))
+		log.Printf("[%s] Received Request from %s\n %s\n", xdsType, subscriber.BuildInstanceKey2(), util.ToJson(req))
 
 		if subscriberDao.IsACK(subscriber, req.ResponseNonce) {
 			defaultPushService.HandleACK(subscriber, req)

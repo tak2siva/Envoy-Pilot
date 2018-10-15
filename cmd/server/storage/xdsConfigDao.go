@@ -31,17 +31,8 @@ func (dao *XdsConfigDao) GetConfigJson(sub *model.EnvoySubscriber) (string, stri
 	return dao.consulWrapper.GetString(sub.BuildRootKey() + "config"), dao.GetLatestVersion(sub)
 }
 
-// func (dao *XdsConfigDao) UpdateEnvoySubscriber(sub *model.EnvoySubscriber) {
-// 	log.Printf("Updating envoy subscriber %+v\n", sub)
-// 	dao.consulWrapper.Set(metaKey(sub), sub.ToJSON())
-// }
-
 func nonceStreamKey(sub *model.EnvoySubscriber, nonce string) string {
-	return fmt.Sprintf("%s/Nonce/Stream/%s", sub.BuildInstanceKey(), nonce)
-}
-
-func metaKey(sub *model.EnvoySubscriber) string {
-	return sub.BuildInstanceKey() + "/meta"
+	return fmt.Sprintf("%s/Nonce/Stream/%s", sub.BuildInstanceKey2(), nonce)
 }
 
 func GetXdsConfigDao() *XdsConfigDao {

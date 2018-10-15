@@ -10,7 +10,6 @@ import (
 )
 
 type EnvoySubscriber struct {
-	Id                 int
 	Guid               string
 	Cluster            string
 	Node               string
@@ -32,11 +31,6 @@ func (e *EnvoySubscriber) ToJSON() string {
 		panic(err)
 	}
 	return string(json)
-}
-
-func (e *EnvoySubscriber) BuildInstanceKey() string {
-	// return fmt.Sprintf("cluster/%s/node/%s/%s/%d", e.Cluster, e.Node, e.SubscribedTo, e.Id)
-	return fmt.Sprintf("%s/app-cluster/%s/%s/nodes/%s_%d", constant.CONSUL_PREFIX, e.Cluster, e.SubscribedTo, e.Node, e.Id)
 }
 
 func (e *EnvoySubscriber) BuildInstanceKey2() string {

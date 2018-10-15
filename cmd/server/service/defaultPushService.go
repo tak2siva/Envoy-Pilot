@@ -47,7 +47,7 @@ func (c *DefaultPushService) IsOutdated(en *model.EnvoySubscriber) bool {
 	actual := util.TrimVersion(en.LastUpdatedVersion)
 	res := latest != actual
 	if res {
-		log.Printf("Found update actual: %s --- latest: %s for  %s\n", actual, latest, en.BuildInstanceKey())
+		log.Printf("Found update actual: %s --- latest: %s for  %s\n", actual, latest, en.BuildInstanceKey2())
 	}
 	return res
 }
@@ -193,7 +193,7 @@ func (c *DefaultPushService) buildDiscoveryResponseFor(subscriber *model.EnvoySu
 	clusterObj, err := mapper.GetResources(configJson)
 
 	if err != nil {
-		log.Printf("Unable to build discovery response for %s\n", subscriber.BuildInstanceKey())
+		log.Printf("Unable to build discovery response for %s\n", subscriber.BuildInstanceKey2())
 		log.Println(err)
 		return nil, err
 	}
@@ -232,13 +232,13 @@ func (c *DefaultPushService) dispatchData(ctx context.Context, stream XDSStreamS
 		}
 		response, err := c.buildDiscoveryResponseFor(subscriber)
 		if err != nil {
-			log.Panicf("Unable to dispatch for %s\n", subscriber.BuildInstanceKey())
+			log.Panicf("Unable to dispatch for %s\n", subscriber.BuildInstanceKey2())
 			continue
 		}
 
 		// TODO add log level
 		// log.Printf("%+v\n", response)
-		// log.Printf("Sending config to %s \n %+v \n", subscriber.BuildInstanceKey(), response)
+		// log.Printf("Sending config to %s \n %+v \n", subscriber.BuildInstanceKey2(), response)
 
 		c.subscriberDao.SaveNonce(subscriber, response.Nonce)
 		err = stream.Send(response)
@@ -247,7 +247,7 @@ func (c *DefaultPushService) dispatchData(ctx context.Context, stream XDSStreamS
 			log.Println(err)
 			c.subscriberDao.RemoveNonce(subscriber, response.Nonce)
 		} else {
-			log.Printf("Successfully Sent config to %s \n", subscriber.BuildInstanceKey())
+			log.Printf("Successfully Sent config to %s \n", subscriber.BuildInstanceKey2())
 		}
 	}
 }
@@ -256,7 +256,7 @@ func (c *DefaultPushService) dispatchData(ctx context.Context, stream XDSStreamS
 // if not ignore
 // if yes update the last updated version
 func (c *DefaultPushService) HandleACK(subscriber *model.EnvoySubscriber, req *v2.DiscoveryRequest) {
-	log.Printf("Received ACK %s from %s", req.ResponseNonce, subscriber.BuildInstanceKey())
+	log.Printf("Received ACK %s from %s", req.ResponseNonce, subscriber.BuildInstanceKey2())
 	c.subscriberDao.RemoveNonce(subscriber, req.ResponseNonce)
 	subscriber.LastUpdatedVersion = req.VersionInfo
 }

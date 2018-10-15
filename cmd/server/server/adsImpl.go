@@ -37,7 +37,7 @@ func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryS
 	for {
 		req, err := stream.Recv()
 		if err != nil {
-			log.Printf("[%s] Disconnecting client %s\n", constant.SUBSCRIBE_ADS, subscriber.BuildInstanceKey())
+			log.Printf("[%s] Disconnecting client %s\n", constant.SUBSCRIBE_ADS, subscriber.BuildInstanceKey2())
 			log.Println(err)
 			cancel()
 			defaultPushService.DeleteSubscriber(subscriber)
@@ -83,7 +83,7 @@ func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryS
 			currentSubscriber = subscriber.AdsList[topic]
 		}
 
-		log.Printf("[%s] Received Request from %s\n %s\n", constant.SUBSCRIBE_ADS, currentSubscriber.BuildInstanceKey(), util.ToJson(req))
+		log.Printf("[%s] Received Request from %s\n %s\n", constant.SUBSCRIBE_ADS, currentSubscriber.BuildInstanceKey2(), util.ToJson(req))
 
 		if subscriberDao.IsACK(currentSubscriber, req.ResponseNonce) {
 			defaultPushService.HandleACK(currentSubscriber, req)
