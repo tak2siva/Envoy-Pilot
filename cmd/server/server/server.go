@@ -17,12 +17,14 @@ import (
 const envoySubscriberKey = "envoySubscriber"
 
 var defaultPushService *service.DefaultPushService
+var dispatchService *service.DispatchService
 var xdsConfigDao *storage.XdsConfigDao
 var subscriberDao *storage.SubscriberDao
 var v2Helper *service.V2HelperService
 
 func init() {
 	defaultPushService = service.GetDefaultPushService()
+	dispatchService = service.GetDispatchService()
 	xdsConfigDao = storage.GetXdsConfigDao()
 	subscriberDao = storage.GetSubscriberDao()
 }
@@ -78,7 +80,7 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 		log.Printf("[%s] Received Request from %s\n %s\n", xdsType, subscriber.BuildInstanceKey2(), util.ToJson(req))
 
 		if subscriberDao.IsACK(subscriber, req.ResponseNonce) {
-			defaultPushService.HandleACK(subscriber, req)
+			dispatchService.HandleACK(subscriber, req)
 			continue
 		} else {
 			log.Printf("[%s] Response nonce not recognized %s", xdsType, req.ResponseNonce)

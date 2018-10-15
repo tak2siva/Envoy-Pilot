@@ -86,7 +86,7 @@ func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryS
 		log.Printf("[%s] Received Request from %s\n %s\n", constant.SUBSCRIBE_ADS, currentSubscriber.BuildInstanceKey2(), util.ToJson(req))
 
 		if subscriberDao.IsACK(currentSubscriber, req.ResponseNonce) {
-			defaultPushService.HandleACK(currentSubscriber, req)
+			dispatchService.HandleACK(currentSubscriber, req)
 			continue
 		} else {
 			log.Printf("[%s] Response nonce not recognized %s", constant.SUBSCRIBE_ADS, req.ResponseNonce)
