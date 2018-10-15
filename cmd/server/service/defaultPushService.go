@@ -41,27 +41,6 @@ func GetDefaultPushService() *DefaultPushService {
 	return singletonDefaultPushService
 }
 
-// IsOutdated check if the last dispatched config is outdated
-func (c *DefaultPushService) IsOutdated(en *model.EnvoySubscriber) bool {
-	latest := util.TrimVersion(c.xdsConfigDao.GetLatestVersion(en))
-	actual := util.TrimVersion(en.LastUpdatedVersion)
-	res := latest != actual
-	if res {
-		log.Printf("Found update actual: %s --- latest: %s for  %s\n", actual, latest, en.BuildInstanceKey2())
-	}
-	return res
-}
-
-func (c *DefaultPushService) IsOutdated2(subscribedTopic string, lastVersion string) bool {
-	latest := util.TrimVersion(c.xdsConfigDao.GetLatestVersionFor(subscribedTopic))
-	actual := util.TrimVersion(lastVersion)
-	res := latest != actual
-	if res {
-		log.Printf("[Global] Found update %s --> %s for  %s\n", actual, latest, subscribedTopic)
-	}
-	return res
-}
-
 // RegisterEnvoy register & subscribe new envoy instance
 func (c *DefaultPushService) RegisterEnvoy(ctx context.Context,
 	stream XDSStreamServer,
