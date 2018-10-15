@@ -1,6 +1,6 @@
 package cache
 
-import "Envoy-Pilot/cmd/server/model"
+import "sync"
 
-var SUBSCRIBER_CACHE = make(map[string]*model.EnvoySubscriber)
-var NONCE_CACHE = make(map[string]bool)
+var SUBSCRIBER_CACHE = sync.Map{}
+var NONCE_CACHE = sync.Map{}

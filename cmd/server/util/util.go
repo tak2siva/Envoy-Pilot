@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"strings"
+	"sync"
 
 	// yaml "gopkg.in/yaml.v2"
 	yaml "github.com/ghodss/yaml"
@@ -53,4 +54,22 @@ func ImportJsonOrYaml(jsonStr string) []interface{} {
 	}
 
 	panic("Invalid json or yaml..")
+}
+
+func SyncMapExists(m *sync.Map, k string) bool {
+	_, res := m.Load(k)
+	return res
+}
+
+func SyncMapGetString(m *sync.Map, k string) string {
+	res, _ := m.Load(k)
+	return res.(string)
+}
+
+func SyncMapSet(m *sync.Map, k string, v interface{}) {
+	m.Store(k, v)
+}
+
+func SyncMapDelete(m *sync.Map, k string) {
+	m.Delete(k)
 }
