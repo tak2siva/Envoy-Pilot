@@ -1,11 +1,12 @@
 package mapper
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"runtime/debug"
+
+	xdsUtil "Envoy-Pilot/cmd/server/util"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
@@ -33,10 +34,11 @@ func (r *RouteMapper) GetRoutes(routesJson string) (retRoutes []*v2.RouteConfigu
 		}
 	}()
 	var rawArr []interface{}
-	err := json.Unmarshal([]byte(routesJson), &rawArr)
-	if err != nil {
-		panic(err)
-	}
+	// err := json.Unmarshal([]byte(routesJson), &rawArr)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	rawArr = xdsUtil.ImportJsonOrYaml(routesJson)
 
 	var routes = make([]*v2.RouteConfiguration, len(rawArr))
 	for i, rawRoute := range rawArr {

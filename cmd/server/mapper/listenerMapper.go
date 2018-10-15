@@ -1,7 +1,7 @@
 package mapper
 
 import (
-	"encoding/json"
+	xdsUtil "Envoy-Pilot/cmd/server/util"
 	"errors"
 	"fmt"
 	"log"
@@ -321,10 +321,11 @@ func (c *ListenerMapper) GetListeners(listenerJson string) (retListener []v2.Lis
 		}
 	}()
 	var rawArr []interface{}
-	err := json.Unmarshal([]byte(listenerJson), &rawArr)
-	if err != nil {
-		panic(err)
-	}
+	// err := json.Unmarshal([]byte(listenerJson), &rawArr)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	rawArr = xdsUtil.ImportJsonOrYaml(listenerJson)
 
 	var listeners = make([]v2.Listener, len(rawArr))
 	for i, rawListener := range rawArr {

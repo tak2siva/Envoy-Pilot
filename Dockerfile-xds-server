@@ -1,5 +1,7 @@
 FROM tak2siva/xds-build:v0.1.4 as builder
 
+RUN go get github.com/ghodss/yaml
+
 RUN mkdir /go/src/Envoy-Pilot
 ADD cmd /go/src/Envoy-Pilot/cmd
 ADD lib /go/src/Envoy-Pilot/lib

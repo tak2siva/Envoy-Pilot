@@ -1,7 +1,7 @@
 package mapper
 
 import (
-	"encoding/json"
+	xdsUtil "Envoy-Pilot/cmd/server/util"
 	"errors"
 	"fmt"
 	"log"
@@ -122,10 +122,11 @@ func (e *EndpointMapper) GetClusterLoadAssignments(endpointsJson string) (retEnd
 		}
 	}()
 	var rawArr []interface{}
-	err := json.Unmarshal([]byte(endpointsJson), &rawArr)
-	if err != nil {
-		panic(err)
-	}
+	// err := json.Unmarshal([]byte(endpointsJson), &rawArr)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	rawArr = xdsUtil.ImportJsonOrYaml(endpointsJson)
 
 	var endpoints = make([]*v2.ClusterLoadAssignment, len(rawArr))
 	for i, rawEndpoint := range rawArr {

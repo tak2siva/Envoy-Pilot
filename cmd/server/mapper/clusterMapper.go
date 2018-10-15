@@ -2,7 +2,6 @@ package mapper
 
 import (
 	"Envoy-Pilot/cmd/server/util"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -246,10 +245,11 @@ func (c *ClusterMapper) GetClusters(clusterJson string) (retCluster []*v2.Cluste
 	}()
 
 	var rawArr []interface{}
-	err := json.Unmarshal([]byte(clusterJson), &rawArr)
-	if err != nil {
-		panic(err)
-	}
+	// err := json.Unmarshal([]byte(clusterJson), &rawArr)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	rawArr = util.ImportJsonOrYaml(clusterJson)
 
 	var clusters = make([]*v2.Cluster, len(rawArr))
 	for i, rawCluster := range rawArr {
