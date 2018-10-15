@@ -11,6 +11,7 @@ import (
 )
 
 var singletonWatchService *WatchService
+var versionChangeChannel = make(chan model.ConfigMeta)
 
 type WatchService struct {
 	xdsConfigDao    *storage.XdsConfigDao
@@ -103,7 +104,7 @@ func (c *WatchService) registerPollTopicADS(ctx context.Context) {
 }
 
 func ConsulPollLoop() {
-	pushService := GetDefaultPushService()
+	pushService := GetRegisterService()
 	log.Printf("Starting Consul Poll Loop..\n")
 	for {
 		time.Sleep(10 * time.Second)

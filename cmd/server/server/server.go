@@ -16,14 +16,14 @@ import (
 
 const envoySubscriberKey = "envoySubscriber"
 
-var defaultPushService *service.DefaultPushService
+var registerService *service.RegisterService
 var dispatchService *service.DispatchService
 var xdsConfigDao *storage.XdsConfigDao
 var subscriberDao *storage.SubscriberDao
 var v2Helper *service.V2HelperService
 
 func init() {
-	defaultPushService = service.GetDefaultPushService()
+	registerService = service.GetRegisterService()
 	dispatchService = service.GetDispatchService()
 	xdsConfigDao = storage.GetXdsConfigDao()
 	subscriberDao = storage.GetSubscriberDao()
@@ -52,7 +52,7 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 			log.Printf("[%s] Disconnecting client %s\n", xdsType, subscriber.BuildInstanceKey2())
 			log.Println(err)
 			cancel()
-			defaultPushService.DeleteSubscriber(subscriber)
+			registerService.DeleteSubscriber(subscriber)
 			metrics.DecActiveConnections(subscriber)
 			metrics.DecActiveSubscribers(subscriber)
 			return err
@@ -71,7 +71,7 @@ func (s *Server) BiDiStreamFor(xdsType string, stream service.XDSStreamServer) e
 				IpAddress:          clientIP,
 			}
 			serverCtx = context.WithValue(serverCtx, envoySubscriberKey, subscriber)
-			defaultPushService.RegisterEnvoy(serverCtx, stream, subscriber, dispatchChannel)
+			registerService.RegisterEnvoy(serverCtx, stream, subscriber, dispatchChannel)
 			metrics.IncActiveConnections(subscriber)
 			metrics.IncActiveSubscribers(subscriber, subscriber.SubscribedTo)
 			i++

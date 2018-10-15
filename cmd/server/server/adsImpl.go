@@ -40,7 +40,7 @@ func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryS
 			log.Printf("[%s] Disconnecting client %s\n", constant.SUBSCRIBE_ADS, subscriber.BuildInstanceKey2())
 			log.Println(err)
 			cancel()
-			defaultPushService.DeleteSubscriber(subscriber)
+			registerService.DeleteSubscriber(subscriber)
 			metrics.DecActiveConnections(subscriber)
 			metrics.DecActiveSubscribers(subscriber)
 			return err
@@ -60,7 +60,7 @@ func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryS
 				IpAddress:          clientIP,
 			}
 			serverCtx = context.WithValue(serverCtx, envoySubscriberKey, subscriber)
-			defaultPushService.RegisterEnvoy(serverCtx, stream, subscriber, dispatchChannel)
+			registerService.RegisterEnvoy(serverCtx, stream, subscriber, dispatchChannel)
 			metrics.IncActiveConnections(subscriber)
 			i++
 		}
@@ -77,7 +77,7 @@ func (s *Server) StreamAggregatedResources(stream discovery.AggregatedDiscoveryS
 				IpAddress:          clientIP,
 			}
 			subscriber.AdsList[topic] = currentSubscriber
-			defaultPushService.RegisterEnvoyADS(serverCtx, stream, currentSubscriber, dispatchChannel)
+			registerService.RegisterEnvoyADS(serverCtx, stream, currentSubscriber, dispatchChannel)
 			metrics.IncActiveSubscribers(subscriber, currentSubscriber.SubscribedTo)
 		} else {
 			currentSubscriber = subscriber.AdsList[topic]

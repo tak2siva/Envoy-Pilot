@@ -10,33 +10,32 @@ import (
 	"github.com/rs/xid"
 )
 
-var singletonDefaultPushService *DefaultPushService
-var versionChangeChannel = make(chan model.ConfigMeta)
+var singletonRegisterService *RegisterService
 var pollTopics = make(map[string]*model.ConfigMeta)
 
-// DefaultPushService  a service class for cluster specific functionalities
-type DefaultPushService struct {
+// RegisterService  a service class for cluster specific functionalities
+type RegisterService struct {
 	xdsConfigDao    *storage.XdsConfigDao
 	subscriberDao   *storage.SubscriberDao
 	dispatchService *DispatchService
 	watchService    *WatchService
 }
 
-// GetDefaultPushService get a singleton instance
-func GetDefaultPushService() *DefaultPushService {
-	if singletonDefaultPushService == nil {
-		singletonDefaultPushService = &DefaultPushService{
+// GetRegisterService get a singleton instance
+func GetRegisterService() *RegisterService {
+	if singletonRegisterService == nil {
+		singletonRegisterService = &RegisterService{
 			xdsConfigDao:    storage.GetXdsConfigDao(),
 			subscriberDao:   storage.GetSubscriberDao(),
 			dispatchService: GetDispatchService(),
 			watchService:    GetWatchService(),
 		}
 	}
-	return singletonDefaultPushService
+	return singletonRegisterService
 }
 
 // RegisterEnvoy register & subscribe new envoy instance
-func (c *DefaultPushService) RegisterEnvoy(ctx context.Context,
+func (c *RegisterService) RegisterEnvoy(ctx context.Context,
 	stream XDSStreamServer,
 	subscriber *model.EnvoySubscriber, dispatchChannel chan model.ConfigMeta) {
 	if subscriber.IsADS() {
@@ -50,7 +49,7 @@ func (c *DefaultPushService) RegisterEnvoy(ctx context.Context,
 	}
 }
 
-func (c *DefaultPushService) RegisterEnvoyADS(ctx context.Context,
+func (c *RegisterService) RegisterEnvoyADS(ctx context.Context,
 	stream XDSStreamServer,
 	subscriber *model.EnvoySubscriber, dispatchChannel chan model.ConfigMeta) {
 	subscriber.Guid = xid.New().String()
@@ -59,7 +58,7 @@ func (c *DefaultPushService) RegisterEnvoyADS(ctx context.Context,
 }
 
 // RemoveSubscriber Delete entry
-func (c *DefaultPushService) DeleteSubscriber(subscriber *model.EnvoySubscriber) {
+func (c *RegisterService) DeleteSubscriber(subscriber *model.EnvoySubscriber) {
 	c.subscriberDao.DeleteSubscriber(subscriber)
 	log.Printf("Deleting subscriber %s\n", subscriber.BuildInstanceKey2())
 	if subscriber.IsADS() {
