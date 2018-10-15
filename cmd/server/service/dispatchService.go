@@ -16,7 +16,7 @@ import (
 var singletonDispatchService *DispatchService
 
 type DispatchService struct {
-	xdsConfigDao    *storage.XdsConfigDao
+	xdsConfigDao    storage.XdsConfigDao
 	subscriberDao   *storage.SubscriberDao
 	clusterMapper   mapper.ClusterMapper
 	listenerMapper  mapper.ListenerMapper

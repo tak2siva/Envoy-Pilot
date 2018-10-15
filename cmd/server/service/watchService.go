@@ -14,7 +14,7 @@ var singletonWatchService *WatchService
 var versionChangeChannel = make(chan model.ConfigMeta)
 
 type WatchService struct {
-	xdsConfigDao    *storage.XdsConfigDao
+	xdsConfigDao    storage.XdsConfigDao
 	subscriberDao   *storage.SubscriberDao
 	dispatchService *DispatchService
 }

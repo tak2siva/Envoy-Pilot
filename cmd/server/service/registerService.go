@@ -15,7 +15,7 @@ var pollTopics = make(map[string]*model.ConfigMeta)
 
 // RegisterService  a service class for cluster specific functionalities
 type RegisterService struct {
-	xdsConfigDao    *storage.XdsConfigDao
+	xdsConfigDao    storage.XdsConfigDao
 	subscriberDao   *storage.SubscriberDao
 	dispatchService *DispatchService
 	watchService    *WatchService

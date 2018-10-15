@@ -18,7 +18,7 @@ const envoySubscriberKey = "envoySubscriber"
 
 var registerService *service.RegisterService
 var dispatchService *service.DispatchService
-var xdsConfigDao *storage.XdsConfigDao
+var xdsConfigDao storage.XdsConfigDao
 var subscriberDao *storage.SubscriberDao
 var v2Helper *service.V2HelperService
 
