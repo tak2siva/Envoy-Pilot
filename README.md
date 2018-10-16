@@ -22,7 +22,10 @@ Also Checkout Sample Project
    * [Envoy xDS Example From File](https://github.com/tak2siva/Envoy-xDS-Example-From-File)
    * [Envoy xDS Example With Consul](https://github.com/tak2siva/Envoy-xDS-Example-Consul)
 
-## Usage
+## File Config
+  Checkout the above example to load config from file
+
+## Consul Usage
 
 xDS Server will be exposed on port 7777
 
@@ -102,4 +105,4 @@ Install using the [Helm Chart for Envoy-Pilot](https://github.com/tak2siva/Envoy
   http://localhost:9090/dump/xDS/app-cluster/ride-service/(CDS|LDS|RDS|EDS)/config
   ```
 
-
+* To get list of subcsribers hit `localhost:9090/dump/subscribers/`
