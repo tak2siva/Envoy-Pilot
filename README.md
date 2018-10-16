@@ -106,3 +106,11 @@ Install using the [Helm Chart for Envoy-Pilot](https://github.com/tak2siva/Envoy
   ```
 
 * To get list of subcsribers hit `localhost:9090/dump/subscribers/`
+
+
+## Prometheus metrics
+
+Prometheus is running on `localhost:8081/metrics` and the following stats are available
+  * xds_active_connections[cluster] (GAUGE)
+  * xds_active_subscribers[cluster][type] (GAUGE)
+  * xds_update_counter[cluster][subscribedTo] (Counter)

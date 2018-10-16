@@ -2,6 +2,7 @@ package service
 
 import (
 	"Envoy-Pilot/cmd/server/constant"
+	"Envoy-Pilot/cmd/server/metrics"
 	"Envoy-Pilot/cmd/server/model"
 	"Envoy-Pilot/cmd/server/storage"
 	"Envoy-Pilot/cmd/server/util"
@@ -39,6 +40,7 @@ func (c *WatchService) firstTimeCheck(subscriber *model.EnvoySubscriber, dispatc
 		if subscriber.IsOutdated(latestVersion) {
 			log.Printf("Found update %s --> %s dispatching for %s\n", subscriber.LastUpdatedVersion, latestVersion, subscriber.BuildInstanceKey2())
 			dispatchChannel <- model.ConfigMeta{Key: subscriber.BuildRootKey(), Topic: subscriber.SubscribedTo, Version: latestVersion}
+			metrics.IncXdsUpdateCounter(subscriber)
 		} else {
 			log.Printf("Already Upto date %s[%s:%s]\n", subscriber.BuildInstanceKey2(), subscriber.LastUpdatedVersion, latestVersion)
 		}
@@ -56,6 +58,7 @@ func (c *WatchService) listenForUpdates(ctx context.Context, dispatchChannel cha
 			if subscriber.IsOutdated(message.Version) {
 				log.Printf("Found update %s --> %s dispatching for %s\n", subscriber.LastUpdatedVersion, message.Version, subscriber.BuildInstanceKey2())
 				dispatchChannel <- message
+				metrics.IncXdsUpdateCounter(subscriber)
 			}
 		}
 	}
@@ -76,6 +79,7 @@ func (c *WatchService) listenForUpdatesADS(ctx context.Context, dispatchChannel 
 				if subscriber.IsOutdated(message.Version) {
 					log.Printf("Found update %s --> %s dispatching for %s\n", subscriber.LastUpdatedVersion, message.Version, subscriber.BuildInstanceKey2())
 					dispatchChannel <- message
+					metrics.IncXdsUpdateCounter(subscriber)
 				}
 			}
 		}

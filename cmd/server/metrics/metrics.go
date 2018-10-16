@@ -27,6 +27,15 @@ var METRICS_ACTIVE_SUBSCRIBERS = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		"type",
 	})
 
+var XDS_UPDATE_COUNTER = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Name: "xds_update_counter",
+	Help: "How many HTTP requests processed, partitioned by status code and HTTP method.",
+},
+	[]string{
+		"cluster",
+		"subscribedTo",
+	})
+
 func IncActiveConnections(en *model.EnvoySubscriber) {
 	METRICS_ACTIVE_CONNECTIONS.With(prometheus.Labels{
 		"cluster": en.Cluster,
@@ -62,9 +71,18 @@ func DecActiveSubscribers(en *model.EnvoySubscriber) {
 	}
 }
 
+func IncXdsUpdateCounter(en *model.EnvoySubscriber) {
+	XDS_UPDATE_COUNTER.With(prometheus.Labels{
+		"cluster":      en.Cluster,
+		"subscribedTo": en.SubscribedTo,
+	}).Inc()
+}
+
 func StartMetricsServer() {
 	prometheus.MustRegister(METRICS_ACTIVE_CONNECTIONS)
 	prometheus.MustRegister(METRICS_ACTIVE_SUBSCRIBERS)
+	prometheus.MustRegister(XDS_UPDATE_COUNTER)
+
 	http.Handle("/metrics", promhttp.Handler())
 
 	log.Println("Starting metrics server on :8081..")
