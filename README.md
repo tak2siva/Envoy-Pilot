@@ -1,6 +1,6 @@
 # Envoy-Pilot 
 
-[![Build Status](https://travis-ci.org/tak2siva/Envoy-Pilot.svg?branch=master)](https://travis-ci.org/tak2siva/Envoy-Pilot)    ![Version](https://img.shields.io/badge/version-v0.2.1-yellowgreen.svg)
+[![Build Status](https://travis-ci.org/tak2siva/Envoy-Pilot.svg?branch=master)](https://travis-ci.org/tak2siva/Envoy-Pilot)    ![Version](https://img.shields.io/badge/version-v0.2.2-yellowgreen.svg)
 
 
 Envoy Pilot or Envoy xDS is a control plane implementation for [Envoy](https://github.com/envoyproxy/envoy) written in Golang and uses Consul for persistence.
@@ -18,7 +18,9 @@ Currently Supports
 
 Checkout [Envoy XDS PROTOCOL Overview](https://github.com/envoyproxy/data-plane-api/blob/master/XDS_PROTOCOL.md) for more detail
 
-Also Checkout Sample Project [Envoy xDS Example](https://github.com/tak2siva/Envoy-xDS-Example)
+Also Checkout Sample Project 
+   * [Envoy xDS Example From File](https://github.com/tak2siva/Envoy-xDS-Example-From-File)
+   * [Envoy xDS Example With Consul](https://github.com/tak2siva/Envoy-xDS-Example-Consul)
 
 ## Usage
 
