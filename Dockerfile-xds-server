@@ -1,5 +1,6 @@
-FROM tak2siva/xds-build:v0.1.5 as builder
+FROM tak2siva/xds-build:v0.1.6 as builder
 
+RUN go get -u github.com/derekparker/delve/cmd/dlv
 ADD cmd /go/src/Envoy-Pilot/cmd
 
 RUN rm -rf  /go/src/github.com/envoyproxy/go-control-plane/vendor

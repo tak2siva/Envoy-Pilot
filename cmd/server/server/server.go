@@ -22,7 +22,7 @@ var xdsConfigDao storage.XdsConfigDao
 var subscriberDao *storage.SubscriberDao
 var v2Helper *service.V2HelperService
 
-func init() {
+func InitServerDeps() {
 	registerService = service.GetRegisterService()
 	dispatchService = service.GetDispatchService()
 	xdsConfigDao = storage.GetXdsConfigDao()

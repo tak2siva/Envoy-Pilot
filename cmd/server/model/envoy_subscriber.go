@@ -35,11 +35,17 @@ func (e *EnvoySubscriber) ToJSON() string {
 
 func (e *EnvoySubscriber) BuildInstanceKey2() string {
 	// return fmt.Sprintf("cluster/%s/node/%s/%s/%d", e.Cluster, e.Node, e.SubscribedTo, e.Id)
+	if constant.FILE_MODE {
+		return fmt.Sprintf("%s/%s/%s", e.Cluster, e.SubscribedTo, e.Guid)
+	}
 	return fmt.Sprintf("%s/app-cluster/%s/%s/%s", constant.CONSUL_PREFIX, e.Cluster, e.SubscribedTo, e.Guid)
 }
 
 func (e *EnvoySubscriber) BuildRootKey() string {
 	// return fmt.Sprintf("cluster/%s/node/%s/%s/", e.Cluster, e.Node, e.SubscribedTo)
+	if constant.FILE_MODE {
+		return fmt.Sprintf("%s/%s/%s/", constant.FOLDER_PATH, e.Cluster, e.SubscribedTo)
+	}
 	return fmt.Sprintf("%s/app-cluster/%s/%s/", constant.CONSUL_PREFIX, e.Cluster, e.SubscribedTo)
 }
 

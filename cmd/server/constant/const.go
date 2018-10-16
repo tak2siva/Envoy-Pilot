@@ -14,3 +14,5 @@ const ENVOY_SUBSCRIBER_KEY = "envoySubscriber"
 var SUPPORTED_TYPES = []string{SUBSCRIBE_CDS, SUBSCRIBE_LDS, SUBSCRIBE_RDS, SUBSCRIBE_EDS}
 var ENV_PATH = "/.env"
 var CONSUL_PREFIX = "xDS"
+var FILE_MODE = false
+var FOLDER_PATH = ""

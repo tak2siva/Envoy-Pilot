@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"Envoy-Pilot/cmd/server/constant"
 	"Envoy-Pilot/cmd/server/model"
 	"Envoy-Pilot/cmd/server/util"
 	"fmt"
@@ -18,7 +19,7 @@ type FileConfigDao struct {
 }
 
 func filePath(sub *model.EnvoySubscriber) string {
-	return fmt.Sprintf("my_config/%s/%s.yaml", sub.Cluster, sub.SubscribedTo)
+	return fmt.Sprintf("%s/%s/%s.yaml", constant.FOLDER_PATH, sub.Cluster, sub.SubscribedTo)
 }
 
 func (dao *FileConfigDao) GetLatestVersion(sub *model.EnvoySubscriber) string {
@@ -36,8 +37,16 @@ func (dao *FileConfigDao) IsRepoPresent(sub *model.EnvoySubscriber) bool {
 	return false
 }
 
+func (dao *FileConfigDao) IsRepoPresentFor(subscriberKey string) bool {
+	if _, err := os.Stat(subscriberKey); !os.IsNotExist(err) {
+		return true
+	}
+	return false
+}
+
 func (dao *FileConfigDao) GetConfigJson(sub *model.EnvoySubscriber) (string, string) {
-	dat, err := ioutil.ReadFile("/tmp/dat")
+
+	dat, err := ioutil.ReadFile(filePath(sub))
 	util.Check(err)
 	return string(dat), dao.GetLatestVersion(sub)
 }

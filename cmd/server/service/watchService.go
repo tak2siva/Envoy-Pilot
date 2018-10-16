@@ -40,7 +40,7 @@ func (c *WatchService) firstTimeCheck(subscriber *model.EnvoySubscriber, dispatc
 			log.Printf("Found update %s --> %s dispatching for %s\n", subscriber.LastUpdatedVersion, latestVersion, subscriber.BuildInstanceKey2())
 			dispatchChannel <- model.ConfigMeta{Key: subscriber.BuildRootKey(), Topic: subscriber.SubscribedTo, Version: latestVersion}
 		} else {
-			log.Printf("Already Upto date %s\n", subscriber.BuildInstanceKey2())
+			log.Printf("Already Upto date %s[%s:%s]\n", subscriber.BuildInstanceKey2(), subscriber.LastUpdatedVersion, latestVersion)
 		}
 	}
 }
@@ -105,14 +105,16 @@ func (c *WatchService) registerPollTopicADS(ctx context.Context) {
 
 func ConsulPollLoop() {
 	pushService := GetRegisterService()
-	log.Printf("Starting Consul Poll Loop..\n")
+	log.Printf("Starting Poll Loop..\n")
 	for {
 		time.Sleep(10 * time.Second)
 		for configKey, configMeta := range pollTopics {
 			latestVersion := pushService.xdsConfigDao.GetLatestVersionFor(configKey)
-			meta := model.ConfigMeta{Key: configKey, Topic: configMeta.Topic, Version: latestVersion}
-			versionChangeChannel <- meta
-			pollTopics[configKey] = &meta
+			if pushService.xdsConfigDao.IsRepoPresentFor(configKey) {
+				meta := model.ConfigMeta{Key: configKey, Topic: configMeta.Topic, Version: latestVersion}
+				versionChangeChannel <- meta
+				pollTopics[configKey] = &meta
+			}
 		}
 	}
 }

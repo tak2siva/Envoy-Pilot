@@ -26,6 +26,13 @@ func (dao *ConsulConfigDao) IsRepoPresent(sub *model.EnvoySubscriber) bool {
 	return true
 }
 
+func (dao *ConsulConfigDao) IsRepoPresentFor(subscriberKey string) bool {
+	if dao.consulWrapper.Get(subscriberKey+"version") == nil || dao.consulWrapper.Get(subscriberKey+"config") == nil {
+		return false
+	}
+	return true
+}
+
 func (dao *ConsulConfigDao) GetConfigJson(sub *model.EnvoySubscriber) (string, string) {
 	return dao.consulWrapper.GetString(sub.BuildRootKey() + "config"), dao.GetLatestVersion(sub)
 }

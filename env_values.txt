@@ -1,1 +1,4 @@
 CONSUL_PATH="http://consul-server-bootstrap:8500"
+CONSUL_PREFIX="xDS"
+FILE_MODE=false
+FOLDER_PATH="/file_mode_config/"

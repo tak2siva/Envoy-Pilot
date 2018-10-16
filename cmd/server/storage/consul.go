@@ -44,11 +44,6 @@ func GetConsulWrapper() ConsulWrapper {
 			panic(err)
 		}
 		singletonConsulWrapper.client = client
-
-		consulPrefix := os.Getenv("CONSUL_PREFIX")
-		if len(consulPrefix) > 0 {
-			constant.CONSUL_PREFIX = consulPrefix
-		}
 	}
 	return singletonConsulWrapper
 }
