@@ -1,5 +1,7 @@
 package constant
 
+import "time"
+
 const (
 	SUBSCRIBE_CDS = "CDS"
 	SUBSCRIBE_LDS = "LDS"
@@ -16,3 +18,4 @@ var ENV_PATH = "/.env"
 var CONSUL_PREFIX = "xDS"
 var FILE_MODE = false
 var FOLDER_PATH = ""
+var POLL_INTERVAL = 10 * time.Second

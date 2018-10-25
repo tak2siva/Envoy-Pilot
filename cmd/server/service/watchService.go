@@ -111,7 +111,7 @@ func ConsulPollLoop() {
 	pushService := GetRegisterService()
 	log.Printf("Starting Poll Loop..\n")
 	for {
-		time.Sleep(10 * time.Second)
+		time.Sleep(constant.POLL_INTERVAL)
 		for configKey, configMeta := range pollTopics {
 			latestVersion := pushService.xdsConfigDao.GetLatestVersionFor(configKey)
 			if pushService.xdsConfigDao.IsRepoPresentFor(configKey) {

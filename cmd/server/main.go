@@ -7,10 +7,12 @@ import (
 	"Envoy-Pilot/cmd/server/server"
 	"Envoy-Pilot/cmd/server/service"
 	"Envoy-Pilot/cmd/server/storage"
+	myUtil "Envoy-Pilot/cmd/server/util"
 	"fmt"
 	"log"
 	"net"
 	"os"
+	"time"
 
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	consul "github.com/hashicorp/consul/api"
@@ -69,6 +71,12 @@ func initEnv() {
 	if err != nil {
 		log.Print(err)
 		log.Fatal("Error loading .env file")
+	}
+
+	if len(os.Getenv("POLL_INTERVAL")) > 0 {
+		res, err := time.ParseDuration(os.Getenv("POLL_INTERVAL"))
+		myUtil.Check(err)
+		constant.POLL_INTERVAL = res
 	}
 
 	if len(os.Getenv("CONSUL_PREFIX")) > 0 {
