@@ -53,7 +53,10 @@ func (c *WatchService) listenForUpdates(ctx context.Context, dispatchChannel cha
 	c.registerPollTopic(ctx)
 	c.firstTimeCheck(subscriber, dispatchChannel)
 
-	for message := range versionChangeChannel {
+	select {
+	case <-ctx.Done():
+		return
+	case message := <-versionChangeChannel:
 		if message.Key == subscriber.BuildRootKey() {
 			if subscriber.IsOutdated(message.Version) {
 				log.Printf("Found update %s --> %s dispatching for %s\n", subscriber.LastUpdatedVersion, message.Version, subscriber.BuildInstanceKey2())
@@ -73,7 +76,11 @@ func (c *WatchService) listenForUpdatesADS(ctx context.Context, dispatchChannel 
 		c.firstTimeCheck(subscriber, dispatchChannel)
 	}
 
-	for message := range versionChangeChannel {
+	select {
+	case <-ctx.Done():
+		return
+	case message := <-versionChangeChannel:
+		adsSubscriber = ctx.Value(constant.ENVOY_SUBSCRIBER_KEY).(*model.EnvoySubscriber)
 		for _, subscriber := range adsSubscriber.AdsList {
 			if message.Key == subscriber.BuildRootKey() {
 				if subscriber.IsOutdated(message.Version) && subscriber.SubscribedTo == message.Topic {
