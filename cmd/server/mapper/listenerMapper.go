@@ -14,6 +14,8 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	als "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v2"
@@ -263,6 +265,61 @@ func buildHttpConnectionManager(rawConfig map[string]interface{}) hcm.HttpConnec
 	return manager
 }
 
+func buildTlsCerts(rawObj interface{}) []*envoy_api_v2_auth.TlsCertificate {
+	if rawObj == nil {
+		return make([]*envoy_api_v2_auth.TlsCertificate, 0)
+	}
+	// tlsCtxMap := toMap(rawObj)
+	// rawArr := toArray(tlsCtxMap["tls_certificates"])
+	rawArr := toArray(rawObj)
+	res := make([]*envoy_api_v2_auth.TlsCertificate, len(rawArr))
+	for i, rawCert := range rawArr {
+		certMap := toMap(rawCert)
+		certChainMap := toMap(certMap["certificate_chain"])
+		privateKeyMap := toMap(certMap["private_key"])
+		res[i] = &envoy_api_v2_auth.TlsCertificate{
+			CertificateChain: &envoy_api_v2_core.DataSource{
+				Specifier: &envoy_api_v2_core.DataSource_Filename{
+					Filename: getString(certChainMap, "filename"),
+				},
+			},
+			PrivateKey: &envoy_api_v2_core.DataSource{
+				Specifier: &envoy_api_v2_core.DataSource_Filename{
+					Filename: getString(privateKeyMap, "filename"),
+				},
+			},
+		}
+	}
+	return res
+}
+
+func buildAlpnProtocol(rawObj interface{}) []string {
+	if rawObj == nil {
+		return make([]string, 0)
+	}
+	alpArray := toArray(rawObj)
+	res := make([]string, len(alpArray))
+	for i, alp := range alpArray {
+		res[i] = alp.(string)
+	}
+	return res
+}
+
+func buildTlsContext(rawObj interface{}) *envoy_api_v2_auth.DownstreamTlsContext {
+	if rawObj == nil {
+		return nil
+	}
+	tlsCtxMap := toMap(rawObj)
+	commonTlsCtxMap := toMap(tlsCtxMap["common_tls_context"])
+
+	return &envoy_api_v2_auth.DownstreamTlsContext{
+		CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
+			TlsCertificates: buildTlsCerts(commonTlsCtxMap["tls_certificates"]),
+			AlpnProtocols:   buildAlpnProtocol(commonTlsCtxMap["alpn_protocols"]),
+		},
+	}
+}
+
 func buildFilterChains(rawFilterChains []interface{}) ([]listener.FilterChain, error) {
 	pbFilterChains := make([]listener.FilterChain, len(rawFilterChains))
 	for i, rawFilterChain := range rawFilterChains {
@@ -285,7 +342,8 @@ func buildFilterChains(rawFilterChains []interface{}) ([]listener.FilterChain, e
 			pbFilters[j] = pbFilter
 		}
 		pbFilterChains[i] = listener.FilterChain{
-			Filters: pbFilters,
+			Filters:    pbFilters,
+			TlsContext: buildTlsContext(filterChainMap["tls_context"]),
 		}
 	}
 	return pbFilterChains, nil

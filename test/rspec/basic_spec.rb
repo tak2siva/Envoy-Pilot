@@ -10,12 +10,14 @@ end
 listener0_json = File.read 'json/listener_0.json'
 listener1_json = File.read 'json/listener_1.json'
 listener2_json = File.read 'json/listener_2.json'
+listener3_json = File.read 'json/listener_3.json'
 
 listeners_json = %Q{
     [
     #{listener0_json},
     #{listener1_json},
-    #{listener2_json}
+    #{listener2_json},
+    #{listener3_json}
     ]
 }
 
@@ -151,7 +153,7 @@ describe "xDS" do
             cset("#{endpointKey}/config", endpoints_json)
             cset("#{endpointKey}/version", endpoint_version)    
         }
-        sleep 60
+        # sleep 60
     end
 
     describe "CDS" do
@@ -209,6 +211,16 @@ describe "xDS" do
             expected = JSON.parse(listeners_json)
             
             expect(actual).to eq(expected[1])
+            expect(actualVersion).to eq(listener_version)
+        end
+
+        it 'Add a listener with tls context' do
+            actual = getDynamicListener(port, 3)
+            actualVersion = getVersion(port, "listeners", "dynamicActiveListeners", 3)
+
+            expected = JSON.parse(listeners_json)
+            
+            expect(actual).to eq(expected[3])
             expect(actualVersion).to eq(listener_version)
         end
     end

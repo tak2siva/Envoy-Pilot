@@ -1,13 +1,26 @@
 {
-    "name": "listener_0",
+    "name": "listener_3",
     "address": {
         "socket_address": {
             "address": "0.0.0.0",
-            "port_value": 80
+            "port_value": 443
         }
     },
     "filter_chains": [
         {   
+            "tls_context": {
+                "common_tls_context": {
+                    "tls_certificates": [{
+                        "certificate_chain": {
+                            "filename": "/etc/cert/cert.pem"
+                        },
+                        "private_key": {
+                            "filename": "/etc/pkey/pkey.pem"
+                        }
+                    }],
+                    "alpn_protocols": ["h2"]
+                }
+            },
             "filters": [
                 {
                     "name": "envoy.http_connection_manager",

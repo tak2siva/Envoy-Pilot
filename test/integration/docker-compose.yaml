@@ -15,6 +15,8 @@ services:
     image: envoyproxy/envoy:v1.7.0
     volumes:
       - $PWD/config-cds-lds.yaml:/config.yaml
+      - $PWD/cert.pem:/etc/cert/cert.pem
+      - $PWD/key.pem:/etc/pkey/pkey.pem
     command: ["envoy", "-c", "/config.yaml", "--v2-config-only", "-l", "debug", "--service-cluster","xdstest-cluster","--service-node","xdstest-node"]
     ports:
       - "9901:9901"
@@ -25,6 +27,8 @@ services:
     image: envoyproxy/envoy:v1.7.0
     volumes:
       - $PWD/config-ads.yaml:/config.yaml
+      - $PWD/cert.pem:/etc/cert/cert.pem
+      - $PWD/key.pem:/etc/pkey/pkey.pem
     command: ["envoy", "-c", "/config.yaml", "--v2-config-only", "-l", "debug", "--service-cluster","adstest-cluster","--service-node","adstest-node"]
     ports:
       - "9902:9901"
