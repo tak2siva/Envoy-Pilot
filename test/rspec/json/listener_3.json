@@ -53,7 +53,21 @@
                                                 "prefix": "/"
                                             },
                                             "route": {
-                                                "cluster": "app1"
+                                                "weighted_clusters": {
+                                                    "runtime_key_prefix": "routing.traffic_split.app1",
+                                                    "total_weight": 100,
+                                                    "clusters": [
+                                                        {
+                                                            "name": "app1",
+                                                            "weight": 50
+                                                        },
+                                                        {
+                                                            "name": "app3",
+                                                            "weight": 50
+                                                        }
+                                                    ]
+                                                },
+                                                "timeout": "30s"
                                             }
                                         }
                                     ]

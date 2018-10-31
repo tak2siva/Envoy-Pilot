@@ -7,6 +7,7 @@ import (
 	"log"
 	"runtime/debug"
 	"strings"
+	"time"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/envoyproxy/go-control-plane/pkg/util"
@@ -66,6 +67,33 @@ func buildRds(rawConfigObj interface{}) hcm.HttpConnectionManager_Rds {
 	}
 }
 
+func buildWeightedClusters(rawObj interface{}) *envoy_api_v2_route.WeightedCluster {
+	if rawObj == nil {
+		return nil
+	}
+	wcMap := toMap(rawObj)
+	totalWeight, err := getUIntValue(wcMap, "total_weight")
+	xdsUtil.Check(err)
+	rkey := getString(wcMap, "runtime_key_prefix")
+
+	rawClusters := toArray(wcMap["clusters"])
+	res := make([]*envoy_api_v2_route.WeightedCluster_ClusterWeight, len(rawClusters))
+	for i, rc := range rawClusters {
+		clusterMap := toMap(rc)
+		w, err := getUIntValue(clusterMap, "weight")
+		xdsUtil.Check(err)
+		res[i] = &envoy_api_v2_route.WeightedCluster_ClusterWeight{
+			Name:   getString(clusterMap, "name"),
+			Weight: &w,
+		}
+	}
+	return &envoy_api_v2_route.WeightedCluster{
+		Clusters:         res,
+		TotalWeight:      &totalWeight,
+		RuntimeKeyPrefix: rkey,
+	}
+}
+
 func buildRoutes(rawObj interface{}) []envoy_api_v2_route.Route {
 	if rawObj == nil {
 		return make([]envoy_api_v2_route.Route, 0)
@@ -77,6 +105,30 @@ func buildRoutes(rawObj interface{}) []envoy_api_v2_route.Route {
 		routeMap := toMap(route)
 		matchMap := toMap(routeMap["match"])
 		routeRouteMap := toMap(routeMap["route"])
+		var timeout *time.Duration
+		if keyExists(routeRouteMap, "timeout") {
+			res, err := time.ParseDuration(getString(routeRouteMap, "timeout"))
+			xdsUtil.Check(err)
+			timeout = &res
+		}
+
+		tmpRoute := envoy_api_v2_route.RouteAction{}
+		if keyExists(routeRouteMap, "cluster") {
+			tmpRoute.ClusterSpecifier = &envoy_api_v2_route.RouteAction_Cluster{
+				Cluster: getString(routeRouteMap, "cluster"),
+			}
+		}
+
+		if keyExists(routeRouteMap, "weighted_clusters") {
+			tmpRoute.ClusterSpecifier = &envoy_api_v2_route.RouteAction_WeightedClusters{
+				WeightedClusters: buildWeightedClusters(routeRouteMap["weighted_clusters"]),
+			}
+		}
+
+		if timeout != nil {
+			tmpRoute.Timeout = timeout
+		}
+
 		res[i] = envoy_api_v2_route.Route{
 			Match: envoy_api_v2_route.RouteMatch{
 				PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
@@ -84,11 +136,7 @@ func buildRoutes(rawObj interface{}) []envoy_api_v2_route.Route {
 				},
 			},
 			Action: &envoy_api_v2_route.Route_Route{
-				Route: &envoy_api_v2_route.RouteAction{
-					ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
-						Cluster: getString(routeRouteMap, "cluster"),
-					},
-				},
+				Route: &tmpRoute,
 			},
 		}
 	}
