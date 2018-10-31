@@ -76,7 +76,7 @@ func (c *WatchService) listenForUpdatesADS(ctx context.Context, dispatchChannel 
 	for message := range versionChangeChannel {
 		for _, subscriber := range adsSubscriber.AdsList {
 			if message.Key == subscriber.BuildRootKey() {
-				if subscriber.IsOutdated(message.Version) {
+				if subscriber.IsOutdated(message.Version) && subscriber.SubscribedTo == message.Topic {
 					log.Printf("Found update %s --> %s dispatching for %s\n", subscriber.LastUpdatedVersion, message.Version, subscriber.BuildInstanceKey2())
 					dispatchChannel <- message
 					metrics.IncXdsUpdateCounter(subscriber)
