@@ -18,7 +18,7 @@
                             "filename": "/etc/pkey/pkey.pem"
                         }
                     }],
-                    "alpn_protocols": ["h2"]
+                    "alpn_protocols": "h2"
                 }
             },
             "filters": [

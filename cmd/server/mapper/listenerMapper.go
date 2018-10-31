@@ -297,11 +297,8 @@ func buildAlpnProtocol(rawObj interface{}) []string {
 	if rawObj == nil {
 		return make([]string, 0)
 	}
-	alpArray := toArray(rawObj)
-	res := make([]string, len(alpArray))
-	for i, alp := range alpArray {
-		res[i] = alp.(string)
-	}
+	res := make([]string, 1)
+	res[0] = rawObj.(string)
 	return res
 }
 

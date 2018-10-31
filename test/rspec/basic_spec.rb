@@ -218,9 +218,11 @@ describe "xDS" do
             actual = getDynamicListener(port, 3)
             actualVersion = getVersion(port, "listeners", "dynamicActiveListeners", 3)
 
-            expected = JSON.parse(listeners_json)
-            
-            expect(actual).to eq(expected[3])
+            expected = JSON.parse(listeners_json)[3]
+            alpn = expected['filter_chains'][0]['tls_context']['common_tls_context']['alpn_protocols']
+            expected['filter_chains'][0]['tls_context']['common_tls_context']['alpn_protocols'] = [alpn]
+
+            expect(actual).to eq(expected)
             expect(actualVersion).to eq(listener_version)
         end
     end
