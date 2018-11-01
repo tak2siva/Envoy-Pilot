@@ -51,7 +51,7 @@ func (c *WatchService) listenForUpdates(ctx context.Context, dispatchChannel cha
 	subscriber := ctx.Value(constant.ENVOY_SUBSCRIBER_KEY).(*model.EnvoySubscriber)
 	util.CheckNil(subscriber)
 	c.registerPollTopic(ctx)
-	// c.firstTimeCheck(subscriber, dispatchChannel)
+	c.firstTimeCheck(subscriber, dispatchChannel)
 
 	for message := range versionChangeChannel {
 		select {
@@ -74,9 +74,9 @@ func (c *WatchService) listenForUpdatesADS(ctx context.Context, dispatchChannel 
 	util.CheckNil(adsSubscriber)
 	c.registerPollTopicADS(ctx)
 
-	// for _, subscriber := range adsSubscriber.AdsList {
-	// c.firstTimeCheck(subscriber, dispatchChannel)
-	// }
+	for _, subscriber := range adsSubscriber.AdsList {
+		c.firstTimeCheck(subscriber, dispatchChannel)
+	}
 
 	for message := range versionChangeChannel {
 		select {
