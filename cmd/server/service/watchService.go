@@ -51,12 +51,14 @@ func (c *WatchService) listenForUpdates(ctx context.Context, dispatchChannel cha
 	subscriber := ctx.Value(constant.ENVOY_SUBSCRIBER_KEY).(*model.EnvoySubscriber)
 	util.CheckNil(subscriber)
 	c.registerPollTopic(ctx)
-	c.firstTimeCheck(subscriber, dispatchChannel)
+	// c.firstTimeCheck(subscriber, dispatchChannel)
 
-	select {
-	case <-ctx.Done():
-		return
-	case message := <-versionChangeChannel:
+	for message := range versionChangeChannel {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
 		if message.Key == subscriber.BuildRootKey() {
 			if subscriber.IsOutdated(message.Version) {
 				log.Printf("Found update %s --> %s dispatching for %s\n", subscriber.LastUpdatedVersion, message.Version, subscriber.BuildInstanceKey2())
@@ -72,14 +74,16 @@ func (c *WatchService) listenForUpdatesADS(ctx context.Context, dispatchChannel 
 	util.CheckNil(adsSubscriber)
 	c.registerPollTopicADS(ctx)
 
-	for _, subscriber := range adsSubscriber.AdsList {
-		c.firstTimeCheck(subscriber, dispatchChannel)
-	}
+	// for _, subscriber := range adsSubscriber.AdsList {
+	// c.firstTimeCheck(subscriber, dispatchChannel)
+	// }
 
-	select {
-	case <-ctx.Done():
-		return
-	case message := <-versionChangeChannel:
+	for message := range versionChangeChannel {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
 		adsSubscriber = ctx.Value(constant.ENVOY_SUBSCRIBER_KEY).(*model.EnvoySubscriber)
 		for _, subscriber := range adsSubscriber.AdsList {
 			if message.Key == subscriber.BuildRootKey() {
@@ -116,13 +120,14 @@ func (c *WatchService) registerPollTopicADS(ctx context.Context) {
 
 func ConsulPollLoop() {
 	pushService := GetRegisterService()
-	log.Printf("Starting Poll Loop..\n")
+	log.Printf("Starting poll loop for %s..\n", constant.POLL_INTERVAL.String())
 	for {
 		time.Sleep(constant.POLL_INTERVAL)
 		for configKey, configMeta := range pollTopics {
 			latestVersion := pushService.xdsConfigDao.GetLatestVersionFor(configKey)
 			if pushService.xdsConfigDao.IsRepoPresentFor(configKey) {
 				meta := model.ConfigMeta{Key: configKey, Topic: configMeta.Topic, Version: latestVersion}
+				log.Printf("[DEBUG] Dispatching Version %+v \n", meta)
 				versionChangeChannel <- meta
 				pollTopics[configKey] = &meta
 			}

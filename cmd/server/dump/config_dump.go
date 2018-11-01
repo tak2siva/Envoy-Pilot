@@ -3,6 +3,8 @@ package dump
 import (
 	"Envoy-Pilot/cmd/server/cache"
 	"Envoy-Pilot/cmd/server/mapper"
+	"Envoy-Pilot/cmd/server/model"
+	"Envoy-Pilot/cmd/server/service"
 	"Envoy-Pilot/cmd/server/storage"
 	"Envoy-Pilot/cmd/server/util"
 	"encoding/json"
@@ -17,6 +19,7 @@ func SetUpHttpServer() {
 	http.HandleFunc("/dump/cds/", configDumpCDS)
 	http.HandleFunc("/dump/lds/", configDumpLDS)
 	http.HandleFunc("/dump/subscribers/", subscribersDump)
+	http.HandleFunc("/dump/topics/", pollTopicsDump)
 
 	log.Println("Starting http server on :9090..")
 	err := http.ListenAndServe(":9090", nil)
@@ -76,5 +79,14 @@ func configDumpLDS(w http.ResponseWriter, r *http.Request) {
 }
 
 func subscribersDump(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "%s", util.ToJson(cache.SUBSCRIBER_CACHE))
+	res := make(map[string]*model.EnvoySubscriber)
+	cache.SUBSCRIBER_CACHE.Range(func(k interface{}, v interface{}) bool {
+		res[k.(string)] = v.(*model.EnvoySubscriber)
+		return true
+	})
+	fmt.Fprintf(w, "%s", util.ToJson(res))
+}
+
+func pollTopicsDump(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "%s", util.ToJson(service.GetPollTopics()))
 }

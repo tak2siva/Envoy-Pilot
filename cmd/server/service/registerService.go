@@ -1,7 +1,6 @@
 package service
 
 import (
-	"Envoy-Pilot/cmd/server/constant"
 	"Envoy-Pilot/cmd/server/model"
 	"Envoy-Pilot/cmd/server/storage"
 	"context"
@@ -34,6 +33,10 @@ func GetRegisterService() *RegisterService {
 	return singletonRegisterService
 }
 
+func GetPollTopics() map[string]*model.ConfigMeta {
+	return pollTopics
+}
+
 // RegisterEnvoy register & subscribe new envoy instance
 func (c *RegisterService) RegisterEnvoy(ctx context.Context,
 	stream XDSStreamServer,
@@ -61,14 +64,16 @@ func (c *RegisterService) RegisterEnvoyADS(ctx context.Context,
 func (c *RegisterService) DeleteSubscriber(subscriber *model.EnvoySubscriber) {
 	c.subscriberDao.DeleteSubscriber(subscriber)
 	log.Printf("Deleting subscriber %s\n", subscriber.BuildInstanceKey2())
-	if subscriber.IsADS() {
-		for _, topic := range constant.SUPPORTED_TYPES {
-			sub := subscriber.AdsList[topic]
-			if sub != nil {
-				delete(pollTopics, sub.BuildRootKey())
-			}
-		}
-	} else {
-		delete(pollTopics, subscriber.BuildRootKey())
-	}
+	// TODO delete polling topic only if subcsribers are empty
+
+	// if subscriber.IsADS() {
+	// 	for _, topic := range constant.SUPPORTED_TYPES {
+	// 		sub := subscriber.AdsList[topic]
+	// 		if sub != nil {
+	// 			delete(pollTopics, sub.BuildRootKey())
+	// 		}
+	// 	}
+	// } else {
+	// 	delete(pollTopics, subscriber.BuildRootKey())
+	// }
 }

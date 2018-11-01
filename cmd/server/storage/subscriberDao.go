@@ -30,6 +30,7 @@ func (dao *SubscriberDao) RegisterSubscriber(sub *model.EnvoySubscriber) {
 		log.Fatal(fmt.Sprintf("Subscrber %+v registered already", sub))
 	}
 	sub.Guid = guid
+	log.Printf("Registering subscriber %+v \n", sub)
 	util.SyncMapSet(&cache.SUBSCRIBER_CACHE, guid, sub)
 }
 
