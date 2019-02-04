@@ -73,6 +73,16 @@ docker-compose -f docker-compose.consul.yaml up
 docker-compose -f docker-compose.server.yaml up --build
 ```
 
+## Running test
+
+```
+cd test/integration
+docker-compose up --build
+
+cd test/rspec
+DEVMODE=true rspec basic_spec.rb --order defined --format documentation
+```
+
 
 ## Runnnig Docker
 

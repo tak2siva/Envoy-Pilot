@@ -153,7 +153,7 @@ describe "xDS" do
             cset("#{endpointKey}/config", endpoints_json)
             cset("#{endpointKey}/version", endpoint_version)    
         }
-        sleep 120
+        sleep 120 unless ENV['DEVMODE']
     end
 
     describe "CDS" do
@@ -174,6 +174,8 @@ describe "xDS" do
             
             expected = JSON.parse(clusters_json)
             expected[1]["type"] = expected[1]["type"].upcase
+            alpn = expected[1]["tls_context"]["common_tls_context"]["alpn_protocols"]
+            expected[1]["tls_context"]["common_tls_context"]["alpn_protocols"] = [alpn]
 
             expect(actual).to eq(expected[1])
             expect(actualVersion).to eq(cluster_version)
@@ -277,6 +279,8 @@ describe "xDS" do
                 
                 expected = JSON.parse(clusters_json)
                 expected[1]["type"] = expected[1]["type"].upcase
+                alpn = expected[1]["tls_context"]["common_tls_context"]["alpn_protocols"]
+                expected[1]["tls_context"]["common_tls_context"]["alpn_protocols"] = [alpn]
     
                 expect(actual).to eq(expected[1])
                 expect(actualVersion).to eq(cluster_version)

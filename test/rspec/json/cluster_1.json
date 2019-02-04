@@ -9,6 +9,20 @@
       "initial_stream_window_size": 268435456,
       "initial_connection_window_size": 268435456
   },
+  "tls_context": {
+    "common_tls_context": {
+      "tls_certificates": [{
+          "certificate_chain": {
+              "filename": "/etc/cert/cert.pem"
+          },
+          "private_key": {
+              "filename": "/etc/pkey/pkey.pem"
+          }
+      }],
+      "alpn_protocols": "h2"
+    },
+    "sni": "www.examplehost.com"
+  },
   "hosts": [{
     "socket_address": {
      "address": "127.0.0.2",

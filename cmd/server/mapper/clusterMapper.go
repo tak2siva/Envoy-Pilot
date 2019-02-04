@@ -12,6 +12,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
 
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	envoy_api_v2_core1 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/gogo/protobuf/proto"
@@ -207,6 +208,24 @@ func buildCircuitBreakers(rawObj interface{}) *envoy_api_v2_cluster.CircuitBreak
 	}
 }
 
+func buildClusterTLSContext(rawObj interface{}) *envoy_api_v2_auth.UpstreamTlsContext {
+	if rawObj == nil {
+		return nil
+	}
+	tlsCtxMap := toMap(rawObj)
+	commonTlsCtxMap := toMap(tlsCtxMap["common_tls_context"])
+	upstreamTlsCtx := &envoy_api_v2_auth.UpstreamTlsContext{
+		CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
+			TlsCertificates: buildTlsCerts(commonTlsCtxMap["tls_certificates"]),
+			AlpnProtocols:   buildAlpnProtocol(commonTlsCtxMap["alpn_protocols"]),
+		},
+	}
+	if keyExists(tlsCtxMap, "sni") {
+		upstreamTlsCtx.Sni = getString(tlsCtxMap, "sni")
+	}
+	return upstreamTlsCtx
+}
+
 func (c *ClusterMapper) GetCluster(rawObj interface{}) (retCluster v2.Cluster, retErr error) {
 	var rawObjMap map[string]interface{}
 	if rawObj != nil {
@@ -225,6 +244,7 @@ func (c *ClusterMapper) GetCluster(rawObj interface{}) (retCluster v2.Cluster, r
 	clusterObj.Http2ProtocolOptions = buildHttp2ProtocolOptions(rawObjMap["http2_protocol_options"])
 	clusterObj.EdsClusterConfig = buildEdsClusterConfig(rawObjMap["eds_cluster_config"])
 	clusterObj.CircuitBreakers = buildCircuitBreakers(rawObjMap["circuit_breakers"])
+	clusterObj.TlsContext = buildClusterTLSContext(rawObjMap["tls_context"])
 
 	hosts, err := buildHosts(rawObjMap["hosts"])
 	if err != nil {
